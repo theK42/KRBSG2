@@ -1,0 +1,10 @@
+.vs/
+_deps/
+CMakeFiles/
+ALL_BUILD.vcxproj
+ALL_BUILD.vcxproj.filters
+*.cmake
+CMakeCache.txt
+ZERO_CHECK.proj
+ZERO_CHECK.proj.filters
+build/

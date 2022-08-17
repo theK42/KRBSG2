@@ -1,0 +1,18 @@
+[submodule "KEngineCore"]
+	path = KEngineCore
+	url = git@github.com:theK42/KEngineCore.git
+[submodule "KEngine2D"]
+	path = KEngine2D
+	url = git@github.com:theK42/KEngine2D.git
+[submodule "KEngineOpenGL"]
+	path = KEngineOpenGL
+	url = git@github.com:theK42/KEngineOpenGL.git
+[submodule "KEngineWindows"]
+	path = KEngineWindows
+	url = git@github.com:theK42/KEngineWindows.git
+[submodule "SDL"]
+	path = SDL
+	url = git@github.com:libsdl-org/SDL.git
+[submodule "KEngineBasics"]
+	path = KEngineBasics
+	url = git@github.com:theK42/KEngineBasics.git
