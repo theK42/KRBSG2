@@ -2,8 +2,7 @@
 #include "PlayerShip.h"
 #include "SpriteFactory.h"
 
-#include "lua.hpp"
-#include "lauxlib.h"
+#include "Lua.hpp"
 
 #include <assert.h> 
 
