@@ -6,7 +6,6 @@ project(KRBSG2)
 add_subdirectory(KEngineCore)
 add_subdirectory(KEngine2D)
 add_subdirectory(KEngineOpenGL)
-add_subdirectory(KEngineWindows)
 add_subdirectory(KEngineBasics)
 
 add_subdirectory(SDL)
