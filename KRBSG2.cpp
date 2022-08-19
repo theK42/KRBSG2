@@ -31,7 +31,7 @@ int main(int argc, char** argv)
 	* Initialises the SDL video subsystem (as well as the events subsystem).
 	* Returns 0 on success or a negative error code on failure using SDL_GetError().
 	*/
-	if (SDL_Init(SDL_INIT_VIDEO) != 0) {
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER) != 0) {
 		fprintf(stderr, "SDL failed to initialise: %s\n", SDL_GetError());
 		return 1;
 	}
@@ -110,8 +110,8 @@ int main(int argc, char** argv)
 
 	input.AddAxisButton("primary.horizontal", "primary.left", KEngineBasics::AxisType::Horizontal, -1, KEngineBasics::ControllerType::Gamepad, SDL_CONTROLLER_BUTTON_DPAD_LEFT);
 	input.AddAxisButton("primary.horizontal", "primary.right", KEngineBasics::AxisType::Horizontal, 1, KEngineBasics::ControllerType::Gamepad, SDL_CONTROLLER_BUTTON_DPAD_RIGHT);
-	input.AddAxisButton("primary.vertical", "primary.down", KEngineBasics::AxisType::Vertical, -1, KEngineBasics::ControllerType::Gamepad, SDL_CONTROLLER_BUTTON_DPAD_DOWN);
-	input.AddAxisButton("primary.vertical", "primary.up", KEngineBasics::AxisType::Vertical, 1, KEngineBasics::ControllerType::Gamepad, SDL_CONTROLLER_BUTTON_DPAD_UP);
+	input.AddAxisButton("primary.vertical", "primary.down", KEngineBasics::AxisType::Vertical, -1, KEngineBasics::ControllerType::Gamepad, SDL_CONTROLLER_BUTTON_DPAD_UP);
+	input.AddAxisButton("primary.vertical", "primary.up", KEngineBasics::AxisType::Vertical, 1, KEngineBasics::ControllerType::Gamepad, SDL_CONTROLLER_BUTTON_DPAD_DOWN);
 
 	input.AddAxisButton("primary.horizontal", "primary.left", KEngineBasics::AxisType::Horizontal, -1, KEngineBasics::ControllerType::Keyboard, SDL_SCANCODE_A);
 	input.AddAxisButton("primary.horizontal", "primary.right", KEngineBasics::AxisType::Horizontal, 1, KEngineBasics::ControllerType::Keyboard, SDL_SCANCODE_D);
@@ -126,6 +126,21 @@ int main(int argc, char** argv)
 	input.AddButton("fire", KEngineBasics::ControllerType::Joystick, 0); 
 	input.AddButton("fire", KEngineBasics::ControllerType::Gamepad, SDL_CONTROLLER_BUTTON_A);
 	input.AddButton("fire", KEngineBasics::ControllerType::Keyboard, SDL_SCANCODE_SPACE);
+
+	SDL_GameController* controller = NULL;
+	for (int i = 0; i < SDL_NumJoysticks(); ++i) {
+		if (SDL_IsGameController(i)) {
+			controller = SDL_GameControllerOpen(i);
+			if (!controller) {
+				fprintf(stderr, "Could not open gamecontroller %i: %s\n", i, SDL_GetError());
+			}
+		}
+		else
+		{
+			SDL_JoystickOpen(i);
+		}
+	}
+
 
 	SDL_Event event;
 	bool loop = true;
