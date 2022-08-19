@@ -138,12 +138,12 @@ void PlayerShipSystem::RegisterLibrary(lua_State* luaState, char const* name)
 		};
 
 
-		static const struct luaL_Reg playerShipMethods[] = {
+		const luaL_Reg playerShipMethods[] = {
 				{"move", move},
 				{nullptr, nullptr}
 		};
 
-		const struct luaL_Reg playerShipLibrary[] = {
+		const luaL_Reg playerShipLibrary[] = {
 			{"spawnPlayerShip", spawnPlayerShip},
 			{"wrapPlayerShip", wrapPlayerShip},
 			{nullptr, nullptr}

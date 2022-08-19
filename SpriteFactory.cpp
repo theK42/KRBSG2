@@ -48,3 +48,8 @@ const KEngineOpenGL::Sprite* SpriteFactory::PlayerShipSprite(const KEngineCore::
 	}
 	return &playerShipSprite;
 }
+
+const KEngineOpenGL::Sprite* SpriteFactory::EnemyShipSprite(const KEngineCore::StringHash& shipId)
+{
+	return PlayerShipSprite(shipId);
+}

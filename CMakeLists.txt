@@ -20,15 +20,21 @@ SpriteFactory.h
 SpriteFactory.cpp
 PlayerShip.h
 PlayerShip.cpp
+EnemyShip.h
+EnemyShip.cpp
 script.lua
 playerShip.lua
+enemyShip.lua
 basic.vert.glsl
 textured.frag.glsl
 ship.png
 )
 
+target_compile_features(KRBSG2 PRIVATE cxx_std_20) 
+
 configure_file(script.lua script.lua COPYONLY)
 configure_file(playerShip.lua playerShip.lua COPYONLY)
+configure_file(enemyShip.lua enemyShip.lua COPYONLY)
 configure_file(basic.vert.glsl basic.vert.glsl COPYONLY)
 configure_file(textured.frag.glsl textured.frag.glsl COPYONLY)
 configure_file(ship.png ship.png COPYONLY)

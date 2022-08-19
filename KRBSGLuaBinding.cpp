@@ -23,29 +23,7 @@ KRBSGLuaBinding::~KRBSGLuaBinding(void)
 	Deinit();
 }
 
-int spawnPlayerShip(lua_State* luaState) {
-	if (!lua_istable(luaState, 1)) {
-		luaL_error(luaState, "Table required for position");
-	}
-	lua_getfield(luaState, 1, "x");
-	double x = luaL_checknumber(luaState, -1);
-	lua_pop(luaState, 1);
-
-	lua_getfield(luaState, 1, "y");
-	double y = luaL_checknumber(luaState, -1);
-	lua_pop(luaState, 1);
-
-	KEngine2D::Point position = { x, y };
-
-	PlayerShip* ship = KRBSGLuaBinding::GetInstance()->SpawnPlayerShip(position);
-
-	lua_pushlightuserdata(luaState, ship); //Probably want a full userdata
-
-	return 1;
-}
-
 const struct luaL_Reg krbsgLibrary[] = {
-	{ "spawnPlayerShip", spawnPlayerShip },
 	{nullptr, nullptr}
 };
 

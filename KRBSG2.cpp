@@ -1,20 +1,22 @@
-#include <stdio.h> /* printf and fprintf */
+
+#include "PlayerShip.h"
+#include "EnemyShip.h"
+#include "SpriteFactory.h"
+#include "SDL.h"
+#include "Input.h"
+#include "KRBSGLuaBinding.h"
 #include "OpenGLUtils.h"
 #undef max
-#include "SDL.h"
 #include "SpriteRenderer.h"
+#include "ShaderFactory.h"
+#include "TextureFactory.h"
 #include "StaticTransform2D.h"
 #include "HierarchicalTransform2D.h"
 #include "LuaScheduler.h"
 #include "Timer.h"
-#include "ShaderFactory.h"
-#include "TextureFactory.h"
-#include "SpriteFactory.h"
-#include "KRBSGLuaBinding.h"
 #include <iostream>
-#include "Input.h"
 #include <limits>
-#include "PlayerShip.h"
+#include <stdio.h>
 
 /* Sets constants */
 #define WIDTH 800
@@ -78,6 +80,7 @@ int main(int argc, char** argv)
 	KEngineBasics::Input			input;
 
 	PlayerShipSystem				playerShipSystem;
+	EnemyShipSystem					enemyShipSystem;
 
 	KEngineCore::ScheduledLuaThread mainThread;
 
@@ -93,6 +96,7 @@ int main(int argc, char** argv)
 
 	coreLuaBinding.Init(luaScheduler.GetMainState(), &luaScheduler, &hierarchySystem, &renderer, &spriteFactory);
 	playerShipSystem.Init(&luaScheduler, &hierarchySystem, &renderer, &spriteFactory);
+	enemyShipSystem.Init(&luaScheduler, &hierarchySystem, &renderer, &spriteFactory);
 	mainThread.Init(&luaScheduler, "script.lua", true);
 
 
