@@ -1,4 +1,6 @@
 #pragma once
+#include "LuaLibrary.h"
+#include <functional>
 
 struct lua_State;
 
@@ -19,22 +21,26 @@ class PlayerShip;
 class SimpleBox;
 class SpriteFactory;
 
-class KRBSGLuaBinding
+class KRBSGLuaBinding : public KEngineCore::LuaLibrary
 {
 public:
 	KRBSGLuaBinding(void);
 	~KRBSGLuaBinding(void);
-	void Init(lua_State* luaState, KEngineCore::LuaScheduler * luaScheduler, KEngine2D::HierarchyUpdater* hierarchySystem, KEngineOpenGL::SpriteRenderer* renderer, SpriteFactory* spriteFactory);
+	void Init(lua_State* luaState, KEngineCore::LuaScheduler * luaScheduler, KEngine2D::HierarchyUpdater* hierarchySystem, KEngineOpenGL::SpriteRenderer* renderer, SpriteFactory* spriteFactory, std::function<void()> exitFunc);
 	void Deinit();
-	static KRBSGLuaBinding* GetInstance();
 
-	PlayerShip* SpawnPlayerShip(KEngine2D::Point& position);
+	void RegisterLibrary(lua_State* luaState, char const* name = "krbsg");
+
+	void RequestExit();
+
+	static KRBSGLuaBinding* GetInstance();
 private:
 	lua_State* mLuaState;
 	KEngineCore::LuaScheduler* mLuaScheduler;
 	KEngine2D::HierarchyUpdater* mHierarchySystem;
 	KEngineOpenGL::SpriteRenderer* mRenderer;
 	SpriteFactory* mSpriteFactory;
+	std::function<void()> mExitFunc;
 
 	static KRBSGLuaBinding* mInstance;
 

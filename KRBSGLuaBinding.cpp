@@ -23,32 +23,22 @@ KRBSGLuaBinding::~KRBSGLuaBinding(void)
 	Deinit();
 }
 
-const struct luaL_Reg krbsgLibrary[] = {
-	{nullptr, nullptr}
-};
-
-int luaopen_krbsg(lua_State* luaState) {
-	luaL_newlib(luaState, krbsgLibrary);
-	return 1;
-};
 
 void KRBSGLuaBinding::Init(lua_State* luaState, KEngineCore::LuaScheduler * luaScheduler,
 	KEngine2D::HierarchyUpdater* hierarchySystem,
 	KEngineOpenGL::SpriteRenderer* renderer,
-	SpriteFactory* spriteFactory) {
+	SpriteFactory* spriteFactory, std::function<void()> exitFunc) {
 	assert(mInstance == nullptr);
+	assert(mLuaState == nullptr);
 	mInstance = this;
 	mLuaState = luaState;
 	mLuaScheduler = luaScheduler;
 	mHierarchySystem = hierarchySystem;
 	mRenderer = renderer;
 	mSpriteFactory = spriteFactory;
-
-	lua_getglobal(luaState, "package");
-	lua_getfield(luaState, -1, "preload");
-	lua_pushcfunction(luaState, luaopen_krbsg);
-	lua_setfield(luaState, -2, "krbsg");
-	lua_pop(luaState, 2);
+	mExitFunc = exitFunc;
+	RegisterLibrary(luaState);
+	
 }
 
 void KRBSGLuaBinding::Deinit() {
@@ -56,15 +46,53 @@ void KRBSGLuaBinding::Deinit() {
 		mInstance = nullptr;
 	}
 
-	lua_getglobal(mLuaState, "package");
-	lua_getfield(mLuaState, -1, "preload");
-	lua_pushnil(mLuaState);
-	lua_setfield(mLuaState, -2, "krbsg");
-	lua_pop(mLuaState, 2);
+	if (mLuaState)
+	{
+		//Honestly unsure if libraries need to be doing this cleanup, but right now none of them are.
+		/*
+		lua_getglobal(mLuaState, "package");
+		lua_getfield(mLuaState, -1, "preload");
+		lua_pushnil(mLuaState);
+		lua_setfield(mLuaState, -2, "krbsg");
+		lua_pop(mLuaState, 2);*/ 
+		mLuaState = nullptr;
+		mLuaScheduler = nullptr;
+		mHierarchySystem = nullptr;
+		mRenderer = nullptr;
+		mSpriteFactory = nullptr;
+	}
 }
 
-PlayerShip* KRBSGLuaBinding::SpawnPlayerShip(KEngine2D::Point& position) {
-	PlayerShip* ship = new PlayerShip();
-	ship->Init(mLuaScheduler, mHierarchySystem, mRenderer, mSpriteFactory, position);
-	return ship;
+void KRBSGLuaBinding::RegisterLibrary(lua_State* luaState, char const* name)
+{
+	auto luaopen_krbsg = [](lua_State* luaState) {
+		auto exit = [](lua_State* luaState) -> int {
+			KRBSGLuaBinding* self = (KRBSGLuaBinding*)lua_touserdata(luaState, lua_upvalueindex(1));
+			self->RequestExit();
+			return 0;
+		};
+
+		const luaL_Reg krbsgLibrary[] = {
+			{"exit", exit},
+			{nullptr, nullptr}
+		};
+
+		luaL_newlibtable(luaState, krbsgLibrary);
+		lua_pushvalue(luaState, lua_upvalueindex(1));
+		luaL_setfuncs(luaState, krbsgLibrary, 1);
+
+		return 1;
+
+		return 1;
+	};
+
+	PreloadLibrary(luaState, "krbsg", luaopen_krbsg);
+
+}
+
+void KRBSGLuaBinding::RequestExit() {
+	if (mExitFunc)
+	{
+		mExitFunc();
+	}
 }

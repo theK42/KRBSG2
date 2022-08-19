@@ -46,7 +46,9 @@ void PlayerShip::Init(KEngineCore::LuaScheduler* luaScheduler, KEngine2D::Hierar
 
 void PlayerShip::Deinit()
 {
+	mScript.Deinit();
 	mGraphic.Deinit();
+	mModelTransform.Deinit();
 	//mBoundary.Deinit();
 	mInitialized = false;
 }
@@ -76,6 +78,7 @@ void PlayerShipSystem::Init(KEngineCore::LuaScheduler* luaScheduler, KEngine2D::
 
 void PlayerShipSystem::Deinit()
 {
+	mPlayerShip.Deinit();
 	mLuaScheduler = nullptr;
 	mHierarchySystem = nullptr;
 	mRenderer = nullptr;

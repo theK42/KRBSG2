@@ -48,7 +48,9 @@ void EnemyShip::Init(KEngineCore::LuaScheduler* luaScheduler, KEngine2D::Hierarc
 
 void EnemyShip::Deinit()
 {
+	mScript.Deinit();
 	mGraphic.Deinit();
+	mModelTransform.Deinit();
 	//mBoundary.Deinit();
 	mInitialized = false;
 }

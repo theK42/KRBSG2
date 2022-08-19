@@ -52,7 +52,7 @@ int main(int argc, char** argv)
 		WIDTH, /* Width of the window in pixels */
 		HEIGHT, /* Height of the window in pixels */
 		SDL_WINDOW_OPENGL); /* Additional flag(s) */
-
+	
 	/* Checks if window has been created; if not, exits program */
 	if (window == NULL) {
 		fprintf(stderr, "SDL window failed to initialise: %s\n", SDL_GetError());
@@ -64,6 +64,9 @@ int main(int argc, char** argv)
 	{
 		std::cerr << SDL_GetError() << std::endl;
 	}
+
+	bool loop = true;
+
 
 	KEngineOpenGL::InitializeGlad(SDL_GL_GetProcAddress);
 
@@ -84,7 +87,6 @@ int main(int argc, char** argv)
 
 	KEngineCore::ScheduledLuaThread mainThread;
 
-
 	luaScheduler.Init();
 	timer.Init(&luaScheduler);
 	input.Init(&luaScheduler, &timer);
@@ -93,8 +95,7 @@ int main(int argc, char** argv)
 	shaderFactory.Init();
 	textureFactory.Init();
 	spriteFactory.Init(&shaderFactory, &textureFactory);
-
-	coreLuaBinding.Init(luaScheduler.GetMainState(), &luaScheduler, &hierarchySystem, &renderer, &spriteFactory);
+	coreLuaBinding.Init(luaScheduler.GetMainState(), &luaScheduler, &hierarchySystem, &renderer, &spriteFactory, [&loop]() {loop = false; });
 	playerShipSystem.Init(&luaScheduler, &hierarchySystem, &renderer, &spriteFactory);
 	enemyShipSystem.Init(&luaScheduler, &hierarchySystem, &renderer, &spriteFactory);
 	mainThread.Init(&luaScheduler, "script.lua", true);
@@ -127,6 +128,9 @@ int main(int argc, char** argv)
 	input.AddButton("fire", KEngineBasics::ControllerType::Gamepad, SDL_CONTROLLER_BUTTON_A);
 	input.AddButton("fire", KEngineBasics::ControllerType::Keyboard, SDL_SCANCODE_SPACE);
 
+	input.AddButton("pause", KEngineBasics::ControllerType::Gamepad, SDL_CONTROLLER_BUTTON_START);
+	input.AddButton("pause", KEngineBasics::ControllerType::Keyboard, SDL_SCANCODE_ESCAPE);
+
 	SDL_GameController* controller = NULL;
 	for (int i = 0; i < SDL_NumJoysticks(); ++i) {
 		if (SDL_IsGameController(i)) {
@@ -141,13 +145,23 @@ int main(int argc, char** argv)
 		}
 	}
 
-
 	SDL_Event event;
-	bool loop = true;
 	Uint32 previousTime = SDL_GetTicks();
 	float maxShort = std::numeric_limits<int16_t>::max();
 
 	while (loop) {
+
+		Uint32 currentTime = SDL_GetTicks();
+
+		Uint32 elapsedTime = currentTime - previousTime;
+		previousTime = currentTime;
+		double elapsedTimeInSeconds = elapsedTime / 1000.0f;
+		timer.Update(elapsedTimeInSeconds);
+		luaScheduler.Update();
+		hierarchySystem.Update(elapsedTimeInSeconds);
+		renderer.Render();
+		SDL_GL_SwapWindow(window);
+
 		/*check if events are being processed*/
 		while (SDL_PollEvent(&event)) {
 			/*check if event type is keyboard press*/
@@ -172,24 +186,28 @@ int main(int argc, char** argv)
 			case SDL_CONTROLLERBUTTONUP:
 				input.HandleButtonUp(KEngineBasics::ControllerType::Gamepad, event.cbutton.button);
 				break;
-
+			case SDL_JOYBUTTONDOWN:
+				input.HandleButtonDown(KEngineBasics::ControllerType::Joystick, event.jbutton.button);
+				break;
+			case SDL_JOYBUTTONUP:
+				input.HandleButtonUp(KEngineBasics::ControllerType::Joystick, event.jbutton.button);
+				break;
 			case SDL_QUIT:
 				loop = false;
 				break;
 			}		
 		}
-		Uint32 currentTime = SDL_GetTicks();
-
-		Uint32 elapsedTime = currentTime - previousTime;
-		previousTime = currentTime;
-		double elapsedTimeInSeconds = elapsedTime / 1000.0f;
-		timer.Update(elapsedTimeInSeconds);
-		luaScheduler.Update();
-		hierarchySystem.Update(elapsedTimeInSeconds);
-		renderer.Render();
-		SDL_GL_SwapWindow(window);
-		
 	}
+
+	mainThread.Deinit();
+	enemyShipSystem.Deinit();
+	playerShipSystem.Deinit();
+	renderer.Deinit();
+	hierarchySystem.Deinit();
+	coreLuaBinding.Deinit();
+	luaScheduler.Deinit();
+	input.Deinit();
+	timer.Deinit();
 
 	/* Frees memory */
 	SDL_DestroyWindow(window);
