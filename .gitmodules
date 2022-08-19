@@ -7,9 +7,6 @@
 [submodule "KEngineOpenGL"]
 	path = KEngineOpenGL
 	url = git@github.com:theK42/KEngineOpenGL.git
-[submodule "KEngineWindows"]
-	path = KEngineWindows
-	url = git@github.com:theK42/KEngineWindows.git
 [submodule "SDL"]
 	path = SDL
 	url = git@github.com:libsdl-org/SDL.git
