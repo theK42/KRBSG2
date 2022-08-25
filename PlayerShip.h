@@ -5,6 +5,9 @@
 #include "SpriteFactory.h"
 #include "LuaScheduler.h"
 
+class WeaponSystem;
+class Weapon;
+
 class PlayerShip
 {
 public:
@@ -13,15 +16,19 @@ public:
 	void Init(KEngineCore::LuaScheduler* luaScheduler, KEngine2D::HierarchyUpdater* hierarchySystem, KEngineOpenGL::SpriteRenderer* renderer, SpriteFactory* spriteFactory, KEngine2D::Point position);
 	void Deinit();
 	void Move(KEngine2D::Point direction);
+	const KEngine2D::Transform* GetWeaponAttach() const;
+	void AddWeapon(Weapon* weapon, WeaponSystem *system);
 private:
-	//KEngineBox2D::Box2DTransform				mBoxMechanics;
-	KEngine2D::StaticTransform					mSelfTransform;
-	KEngine2D::UpdatingHierarchicalTransform	mModelTransform;
+	KEngine2D::StaticTransform						mSelfTransform;
+	KEngine2D::UpdatingHierarchicalTransform		mModelTransform;
+	KEngine2D::UpdatingHierarchicalTransform		mWeaponAttachTransform;
 	//KEngine2D::BoundingArea						mBoundingArea;
 	//KEngine2D::BoundingBox						mBoundary;
-	KEngineOpenGL::SpriteGraphic				mGraphic;
-	KEngineCore::ScheduledLuaThread				mScript;
-	bool										mInitialized;
+	KEngineOpenGL::SpriteGraphic					mGraphic;
+	KEngineCore::ScheduledLuaThread					mScript;
+	bool											mInitialized;
+	std::vector<std::pair<Weapon*, WeaponSystem*>>	mWeapons;
+
 };
 
 class PlayerShipSystem : public KEngineCore::LuaLibrary
@@ -30,7 +37,7 @@ public:
 	PlayerShipSystem();
 	~PlayerShipSystem();
 
-	void Init(KEngineCore::LuaScheduler* luaScheduler, KEngine2D::HierarchyUpdater* hierarchySystem, KEngineOpenGL::SpriteRenderer* renderer, SpriteFactory* spriteFactory);
+	void Init(KEngineCore::LuaScheduler* luaScheduler, KEngine2D::HierarchyUpdater* hierarchySystem, KEngineOpenGL::SpriteRenderer* renderer, SpriteFactory* spriteFactory, WeaponSystem * weaponSystem);
 	void Deinit();
 
 	PlayerShip *CreatePlayerShip(KEngine2D::Point position);
@@ -42,7 +49,8 @@ private:
 	KEngine2D::HierarchyUpdater* mHierarchySystem{ nullptr };
 	KEngineOpenGL::SpriteRenderer* mRenderer{ nullptr };
 	KEngineCore::LuaScheduler* mLuaScheduler{ nullptr };
-	SpriteFactory* mSpriteFactory{ nullptr };
+	SpriteFactory* mSpriteFactory{ nullptr }; 
+	WeaponSystem* mWeaponSystem{ nullptr };
 	KEngineCore::LuaWrapping<PlayerShip>mLuaWrapping;
 };
 

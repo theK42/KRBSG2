@@ -13,6 +13,7 @@ void SpriteFactory::Init(KEngineOpenGL::ShaderFactory* shaderFactory, KEngineOpe
 	mTextureFactory = textureFactory;
 	shaderFactory->CreateShaderProgram(HASH("Textured", 0xDF225E87), "basic.vert", "textured.frag");
 	textureFactory->CreateTexture(HASH("Ship", 0x5A02441A), "ship.png");
+	textureFactory->CreateTexture(HASH("Blaster", 0x196F6AFE), "blaster.png");
 }
 
 const int TEMP_SHIP_DIM = 40;
@@ -52,4 +53,37 @@ const KEngineOpenGL::Sprite* SpriteFactory::PlayerShipSprite(const KEngineCore::
 const KEngineOpenGL::Sprite* SpriteFactory::EnemyShipSprite(const KEngineCore::StringHash& shipId)
 {
 	return PlayerShipSprite(shipId);
+}
+
+const int TEMP_BLASTER_DIM = 40;
+const KEngineOpenGL::Sprite* SpriteFactory::ProjectileSprite(const KEngineCore::StringHash& starId)
+{
+	assert(mShaderFactory != nullptr);
+	static bool once = false;
+	if (!once) {
+		once = true;
+		int width = TEMP_BLASTER_DIM;
+		int height = TEMP_BLASTER_DIM;
+		const KEngineOpenGL::Vertex Vertices[] = {
+			{ { width, 0, 0 },{ 1, 1, 1, 1 },{ 1,0 } },
+			{ { width, height, 0 },{ 1, 1, 1, 1 },{ 1,1 } },
+			{ { 0, height, 0 },{ 1, 1, 1, 1 },{ 0,1 } },
+			{ { 0, 0, 0 },{ 1, 1, 1, 1 },{ 0,0 } }
+		};
+
+		const GLushort Indices[] = {
+			0, 1, 2,
+			2, 3, 0
+		};
+
+		KEngineOpenGL::Sprite& sprite = blasterSprite;
+		sprite.width = width;
+		sprite.height = height;
+
+		sprite.vertexArrayObject = KEngineOpenGL::UploadModel(Vertices, 4, Indices, 6);
+		sprite.shaderProgram = mShaderFactory->GetShaderProgram(HASH("Textured", 0xDF225E87));
+		sprite.indexCount = 6;
+		sprite.texture = mTextureFactory->GetTexture(HASH("Blaster", 0x196F6AFE));
+	}
+	return &blasterSprite;
 }

@@ -1,6 +1,9 @@
 
 #include "PlayerShip.h"
 #include "EnemyShip.h"
+#include "Weapon.h"
+#include "PoolParty.h"
+#include "ProjectileFactory.h"
 #include "SpriteFactory.h"
 #include "SDL.h"
 #include "Input.h"
@@ -12,6 +15,7 @@
 #include "TextureFactory.h"
 #include "StaticTransform2D.h"
 #include "HierarchicalTransform2D.h"
+#include "MechanicalTransform2D.h"
 #include "LuaScheduler.h"
 #include "Timer.h"
 #include <iostream>
@@ -73,6 +77,7 @@ int main(int argc, char** argv)
 	KEngineCore::LuaScheduler       luaScheduler;
 	KEngineCore::Timer              timer;
 	KEngine2D::HierarchyUpdater     hierarchySystem;
+	KEngine2D::MechanicsUpdater		mechanicsSystem;
 
 
 	KEngineOpenGL::SpriteRenderer   renderer;
@@ -84,6 +89,9 @@ int main(int argc, char** argv)
 
 	PlayerShipSystem				playerShipSystem;
 	EnemyShipSystem					enemyShipSystem;
+	WeaponSystem					weaponSystem;
+	ProjectileFactory				projectileFactory;
+	PoolParty						poolParty;
 
 	KEngineCore::ScheduledLuaThread mainThread;
 
@@ -91,12 +99,17 @@ int main(int argc, char** argv)
 	timer.Init(&luaScheduler);
 	input.Init(&luaScheduler, &timer);
 	hierarchySystem.Init();
+	mechanicsSystem.Init();
 	renderer.Init(WIDTH, HEIGHT);
 	shaderFactory.Init();
 	textureFactory.Init();
 	spriteFactory.Init(&shaderFactory, &textureFactory);
 	coreLuaBinding.Init(luaScheduler.GetMainState(), &luaScheduler, &hierarchySystem, &renderer, &spriteFactory, [&loop]() {loop = false; });
-	playerShipSystem.Init(&luaScheduler, &hierarchySystem, &renderer, &spriteFactory);
+	ProjectileDescription blasterBlueprint{ HASH("Blaster", 0x196F6AFE) , {0.0f, -500.0f}, 2.0f };
+	poolParty.Init();
+	projectileFactory.Init(&poolParty, &luaScheduler, &timer, &hierarchySystem, &mechanicsSystem, &renderer, &spriteFactory, blasterBlueprint);
+	weaponSystem.Init(&luaScheduler, &projectileFactory);
+	playerShipSystem.Init(&luaScheduler, &hierarchySystem, &renderer, &spriteFactory, &weaponSystem);
 	enemyShipSystem.Init(&luaScheduler, &hierarchySystem, &renderer, &spriteFactory);
 	mainThread.Init(&luaScheduler, "script.lua", true);
 
@@ -159,6 +172,7 @@ int main(int argc, char** argv)
 		timer.Update(elapsedTimeInSeconds);
 		luaScheduler.Update();
 		hierarchySystem.Update(elapsedTimeInSeconds);
+		mechanicsSystem.Update(elapsedTimeInSeconds);
 		renderer.Render();
 		SDL_GL_SwapWindow(window);
 
@@ -200,14 +214,18 @@ int main(int argc, char** argv)
 	}
 
 	mainThread.Deinit();
+	weaponSystem.Deinit();
+	projectileFactory.Deinit();
 	enemyShipSystem.Deinit();
 	playerShipSystem.Deinit();
 	renderer.Deinit();
 	hierarchySystem.Deinit();
+	mechanicsSystem.Deinit();
 	coreLuaBinding.Deinit();
 	luaScheduler.Deinit();
 	input.Deinit();
 	timer.Deinit();
+	poolParty.Deinit();
 
 	/* Frees memory */
 	SDL_DestroyWindow(window);

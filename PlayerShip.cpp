@@ -1,4 +1,5 @@
 #include "PlayerShip.h"
+#include "Weapon.h"
 #include "SpriteFactory.h"
 #include <assert.h>
 
@@ -28,6 +29,11 @@ void PlayerShip::Init(KEngineCore::LuaScheduler* luaScheduler, KEngine2D::Hierar
 
 	mModelTransform.Init(hierarchySystem, &mSelfTransform, modelTransform);
 
+	KEngine2D::Point modelUpperCenter = { 0, -height / 2.0f };
+	KEngine2D::StaticTransform weaponTransform(modelUpperCenter);
+
+	mWeaponAttachTransform.Init(hierarchySystem, &mSelfTransform, weaponTransform);
+
 	mSelfTransform.SetTranslation(position);
 
 	mGraphic.Init(renderer, spriteFactory->PlayerShipSprite(HASH("Ship", 0x5A02441A)), &mModelTransform);
@@ -50,12 +56,31 @@ void PlayerShip::Deinit()
 	mGraphic.Deinit();
 	mModelTransform.Deinit();
 	//mBoundary.Deinit();
+	for (auto weaponPair : mWeapons)
+	{
+		auto weapon = weaponPair.first;
+		auto system = weaponPair.second;
+		weapon->Deinit();
+		system->RecycleWeapon(weapon);
+	}
+	mWeapons.clear();
+	mWeaponAttachTransform.Deinit();
 	mInitialized = false;
 }
 
 void PlayerShip::Move(KEngine2D::Point direction)
 {
 	mSelfTransform.SetTranslation(mSelfTransform.GetTranslation() + direction);
+}
+
+const KEngine2D::Transform* PlayerShip::GetWeaponAttach() const
+{
+	return &mWeaponAttachTransform;
+}
+
+void PlayerShip::AddWeapon(Weapon* weapon, WeaponSystem* system)
+{
+	mWeapons.push_back({ weapon, system });
 }
 
 PlayerShipSystem::PlayerShipSystem()
@@ -66,13 +91,14 @@ PlayerShipSystem::~PlayerShipSystem()
 {
 }
 
-void PlayerShipSystem::Init(KEngineCore::LuaScheduler* luaScheduler, KEngine2D::HierarchyUpdater* hierarchySystem, KEngineOpenGL::SpriteRenderer* renderer, SpriteFactory* spriteFactory)
+void PlayerShipSystem::Init(KEngineCore::LuaScheduler* luaScheduler, KEngine2D::HierarchyUpdater* hierarchySystem, KEngineOpenGL::SpriteRenderer* renderer, SpriteFactory* spriteFactory, WeaponSystem* weaponSystem)
 {
 	assert(mLuaScheduler == nullptr);
 	mLuaScheduler = luaScheduler;
 	mHierarchySystem = hierarchySystem; 
 	mRenderer = renderer;
 	mSpriteFactory = spriteFactory;
+	mWeaponSystem = weaponSystem;
 	RegisterLibrary(luaScheduler->GetMainState());
 }
 
@@ -83,6 +109,7 @@ void PlayerShipSystem::Deinit()
 	mHierarchySystem = nullptr;
 	mRenderer = nullptr;
 	mSpriteFactory = nullptr;
+	mWeaponSystem = nullptr;
 }
 
 PlayerShip* PlayerShipSystem::CreatePlayerShip(KEngine2D::Point position)
@@ -140,9 +167,18 @@ void PlayerShipSystem::RegisterLibrary(lua_State* luaState, char const* name)
 			return 0;
 		};
 
+		auto addWeapon = [](lua_State* luaState) -> int {
+			PlayerShipSystem* playerShipSystem = (PlayerShipSystem*)lua_touserdata(luaState, lua_upvalueindex(1));
+			PlayerShip* ship = playerShipSystem->mLuaWrapping.Unwrap(luaState, 1);
+			Weapon * weapon = playerShipSystem->mWeaponSystem->CreateWeapon(ship->GetWeaponAttach(), .5f);  // cooldown here seems deeply weird.  Fix.
+			ship->AddWeapon(weapon, playerShipSystem->mWeaponSystem);
+			return 0;
+		};
+
 
 		const luaL_Reg playerShipMethods[] = {
 				{"move", move},
+				{"addWeapon", addWeapon},
 				{nullptr, nullptr}
 		};
 

@@ -37,12 +37,22 @@ PlayerShip.h
 PlayerShip.cpp
 EnemyShip.h
 EnemyShip.cpp
+Weapon.h
+Weapon.cpp
+Attack.h
+Attack.cpp
+ProjectileFactory.h
+ProjectileFactory.cpp
+PoolParty.h
+PoolParty.cpp
 script.lua
 playerShip.lua
 enemyShip.lua
+blaster.lua
 basic.vert.glsl
 textured.frag.glsl
 ship.png
+blaster.png
 )
 
 target_compile_features(KRBSG2 PRIVATE cxx_std_20) 
@@ -63,9 +73,11 @@ ENDIF (${SDL2_FOUND})
 configure_file(script.lua script.lua COPYONLY)
 configure_file(playerShip.lua playerShip.lua COPYONLY)
 configure_file(enemyShip.lua enemyShip.lua COPYONLY)
+configure_file(blaster.lua blaster.lua COPYONLY)
 configure_file(basic.vert.glsl basic.vert.glsl COPYONLY)
 configure_file(textured.frag.glsl textured.frag.glsl COPYONLY)
 configure_file(ship.png ship.png COPYONLY)
+configure_file(blaster.png blaster.png COPYONLY)
 
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT KRBSG2)
 target_link_libraries(KRBSG2 PRIVATE KEngineCore KEngine2D KEngineBasics KEngineOpenGL SDL2-static SDL2main)

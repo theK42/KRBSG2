@@ -3,7 +3,6 @@ local playerShips = require "playerships"
 
 local playerShip = playerShips.wrapPlayerShip(...);
 
-
 move = input.setOnCombinedAxisTilt("primary", 
 	function(tilt)
 		tilt.x = tilt.x * 2;
@@ -12,5 +11,6 @@ move = input.setOnCombinedAxisTilt("primary",
 	end
 );
 
+playerShip:addWeapon();
 
 while true do coroutine.yield() end

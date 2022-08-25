@@ -14,10 +14,13 @@ public:
     void Init(KEngineOpenGL::ShaderFactory* shaderFactory, KEngineOpenGL::TextureFactory* textureFactory);
     const KEngineOpenGL::Sprite* PlayerShipSprite(const KEngineCore::StringHash & shipId);
     const KEngineOpenGL::Sprite* EnemyShipSprite(const KEngineCore::StringHash& shipId);// , Color color);
-    const KEngineOpenGL::Sprite* StarSprite(const KEngineCore::StringHash & starId);
+    const KEngineOpenGL::Sprite* StarSprite(const KEngineCore::StringHash& starId);
+    const KEngineOpenGL::Sprite* ProjectileSprite(const KEngineCore::StringHash& starId);
 private:
     
     KEngineOpenGL::Sprite playerShipSprite;  // Lol.
+
+    KEngineOpenGL::Sprite blasterSprite;  // Ugh, might as well.
 
     bool  mInitialized{ false };
 
