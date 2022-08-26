@@ -53,23 +53,16 @@ basic.vert.glsl
 textured.frag.glsl
 ship.png
 blaster.png
+laser1.wav
+magic_space.mp3
+)
+
+add_custom_command(TARGET KRBSG2 POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_RUNTIME_DLLS:KRBSG2> $<TARGET_FILE_DIR:KRBSG2>
+  COMMAND_EXPAND_LISTS
 )
 
 target_compile_features(KRBSG2 PRIVATE cxx_std_20) 
-FIND_PACKAGE(SDL2)
-IF (${SDL2_FOUND})
-	MESSAGE(STATUS "Found SDL.")
-	set(SDL_SHARED ON)
-	set(SDL_STATIC OFF)	
-	target_link_libraries(KRBSG2 PRIVATE SDL2 SDL2main)
-ELSE (${SDL2_FOUND})
-	MESSAGE(STATUS "Could not locate SDL.")
-	add_submodule(SDL)
-	set(SDL_SHARED OFF)
-	set(SDL_STATIC ON)	
-	target_link_libraries(KRBSG2 PRIVATE SDL2-static SDL2main)
-ENDIF (${SDL2_FOUND})
-
 configure_file(script.lua script.lua COPYONLY)
 configure_file(playerShip.lua playerShip.lua COPYONLY)
 configure_file(enemyShip.lua enemyShip.lua COPYONLY)
@@ -78,6 +71,9 @@ configure_file(basic.vert.glsl basic.vert.glsl COPYONLY)
 configure_file(textured.frag.glsl textured.frag.glsl COPYONLY)
 configure_file(ship.png ship.png COPYONLY)
 configure_file(blaster.png blaster.png COPYONLY)
+configure_file(laser1.wav laser1.wav COPYONLY)
+configure_file(magic_space.mp3 magic_space.mp3 COPYONLY)
 
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT KRBSG2)
-target_link_libraries(KRBSG2 PRIVATE KEngineCore KEngine2D KEngineBasics KEngineOpenGL SDL2-static SDL2main)
+target_link_libraries(KRBSG2 PRIVATE KEngineCore KEngine2D KEngineBasics KEngineOpenGL SDL2main)
+

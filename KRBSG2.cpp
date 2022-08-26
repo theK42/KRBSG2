@@ -1,4 +1,4 @@
-
+#include "KRBSGLuaBinding.h"
 #include "PlayerShip.h"
 #include "EnemyShip.h"
 #include "Weapon.h"
@@ -7,7 +7,7 @@
 #include "SpriteFactory.h"
 #include "SDL.h"
 #include "Input.h"
-#include "KRBSGLuaBinding.h"
+#include "Audio.h"
 #include "OpenGLUtils.h"
 #undef max
 #include "SpriteRenderer.h"
@@ -35,7 +35,7 @@ int main(int argc, char** argv)
 	* Initialises the SDL video subsystem (as well as the events subsystem).
 	* Returns 0 on success or a negative error code on failure using SDL_GetError().
 	*/
-	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER) != 0) {
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER | SDL_INIT_AUDIO) != 0) {
 		fprintf(stderr, "SDL failed to initialise: %s\n", SDL_GetError());
 		return 1;
 	}
@@ -86,6 +86,7 @@ int main(int argc, char** argv)
 	SpriteFactory					spriteFactory;
 	KRBSGLuaBinding					coreLuaBinding;
 	KEngineBasics::Input			input;
+	KEngineBasics::AudioSystem		audio;
 
 	PlayerShipSystem				playerShipSystem;
 	EnemyShipSystem					enemyShipSystem;
@@ -98,6 +99,9 @@ int main(int argc, char** argv)
 	luaScheduler.Init();
 	timer.Init(&luaScheduler);
 	input.Init(&luaScheduler, &timer);
+	audio.Init(&luaScheduler);
+	audio.LoadMusic(HASH("gameMusic", 0xBAA31179), "magic_space.mp3");
+	audio.LoadSound(HASH("pew", 0x7D5BCA3F), "laser1.wav");
 	hierarchySystem.Init();
 	mechanicsSystem.Init();
 	renderer.Init(WIDTH, HEIGHT);
@@ -223,6 +227,7 @@ int main(int argc, char** argv)
 	mechanicsSystem.Deinit();
 	coreLuaBinding.Deinit();
 	luaScheduler.Deinit();
+	audio.Deinit();
 	input.Deinit();
 	timer.Deinit();
 	poolParty.Deinit();
