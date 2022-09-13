@@ -55,6 +55,7 @@ ship.png
 blaster.png
 laser1.wav
 magic_space.mp3
+KRBSG.dat
 )
 
 add_custom_command(TARGET KRBSG2 POST_BUILD
@@ -73,6 +74,7 @@ configure_file(ship.png ship.png COPYONLY)
 configure_file(blaster.png blaster.png COPYONLY)
 configure_file(laser1.wav laser1.wav COPYONLY)
 configure_file(magic_space.mp3 magic_space.mp3 COPYONLY)
+configure_file(KRBSG.dat KRBSG.dat COPYONLY)
 
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT KRBSG2)
 target_link_libraries(KRBSG2 PRIVATE KEngineCore KEngine2D KEngineBasics KEngineOpenGL SDL2main)

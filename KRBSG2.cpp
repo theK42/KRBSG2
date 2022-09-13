@@ -18,9 +18,11 @@
 #include "MechanicalTransform2D.h"
 #include "LuaScheduler.h"
 #include "Timer.h"
+#include "DataTree.h"
 #include <iostream>
 #include <limits>
 #include <stdio.h>
+#include <fstream>
 
 /* Sets constants */
 #define WIDTH 800
@@ -94,6 +96,15 @@ int main(int argc, char** argv)
 	ProjectileFactory				projectileFactory;
 	PoolParty						poolParty;
 
+
+	KEngineCore::DataTree			dataRoot;
+	std::ifstream dataStream("KRBSG.dat", std::ios::binary);    
+	if (!dataStream.is_open()) {
+		throw std::runtime_error("failed to open file!");
+	}
+	dataRoot.ReadFromStream(dataStream);
+	dataStream.close();
+
 	KEngineCore::ScheduledLuaThread mainThread;
 
 	luaScheduler.Init();
@@ -105,9 +116,10 @@ int main(int argc, char** argv)
 	hierarchySystem.Init();
 	mechanicsSystem.Init();
 	renderer.Init(WIDTH, HEIGHT);
+
 	shaderFactory.Init();
 	textureFactory.Init();
-	spriteFactory.Init(&shaderFactory, &textureFactory);
+	spriteFactory.Init(&shaderFactory, &textureFactory, &dataRoot);
 	coreLuaBinding.Init(luaScheduler.GetMainState(), &luaScheduler, &hierarchySystem, &renderer, &spriteFactory, [&loop]() {loop = false; });
 	ProjectileDescription blasterBlueprint{ HASH("Blaster", 0x196F6AFE) , {0.0f, -500.0f}, 2.0f };
 	poolParty.Init();
@@ -118,35 +130,35 @@ int main(int argc, char** argv)
 	mainThread.Init(&luaScheduler, "script.lua", true);
 
 
-	input.AddCombinedAxis("primary");
+	input.AddCombinedAxis(HASH("primary", 0x1745EA86));
 
-	input.AddChildAxis("primary", "primary.horizontal", KEngineBasics::AxisType::Horizontal, KEngineBasics::ControllerType::Joystick, 0);
-	input.AddChildAxis("primary", "primary.vertical", KEngineBasics::AxisType::Vertical, KEngineBasics::ControllerType::Joystick, 1);
+	input.AddChildAxis(HASH("primary", 0x1745EA86), HASH("primary.horizontal", 0x520B651B), KEngineBasics::AxisType::Horizontal, KEngineBasics::ControllerType::Joystick, 0);
+	input.AddChildAxis(HASH("primary", 0x1745EA86), HASH("primary.vertical", 0x6ED1CEFB), KEngineBasics::AxisType::Vertical, KEngineBasics::ControllerType::Joystick, 1);
 
-	input.AddChildAxis("primary", "primary.horizontal", KEngineBasics::AxisType::Horizontal, KEngineBasics::ControllerType::Gamepad, SDL_CONTROLLER_AXIS_LEFTX);
-	input.AddChildAxis("primary", "primary.vertical", KEngineBasics::AxisType::Vertical, KEngineBasics::ControllerType::Gamepad, SDL_CONTROLLER_AXIS_LEFTY);
+	input.AddChildAxis(HASH("primary", 0x1745EA86), HASH("primary.horizontal", 0x520B651B), KEngineBasics::AxisType::Horizontal, KEngineBasics::ControllerType::Gamepad, SDL_CONTROLLER_AXIS_LEFTX);
+	input.AddChildAxis(HASH("primary", 0x1745EA86), HASH("primary.vertical", 0x6ED1CEFB), KEngineBasics::AxisType::Vertical, KEngineBasics::ControllerType::Gamepad, SDL_CONTROLLER_AXIS_LEFTY);
 
-	input.AddAxisButton("primary.horizontal", "primary.left", KEngineBasics::AxisType::Horizontal, -1, KEngineBasics::ControllerType::Gamepad, SDL_CONTROLLER_BUTTON_DPAD_LEFT);
-	input.AddAxisButton("primary.horizontal", "primary.right", KEngineBasics::AxisType::Horizontal, 1, KEngineBasics::ControllerType::Gamepad, SDL_CONTROLLER_BUTTON_DPAD_RIGHT);
-	input.AddAxisButton("primary.vertical", "primary.down", KEngineBasics::AxisType::Vertical, -1, KEngineBasics::ControllerType::Gamepad, SDL_CONTROLLER_BUTTON_DPAD_UP);
-	input.AddAxisButton("primary.vertical", "primary.up", KEngineBasics::AxisType::Vertical, 1, KEngineBasics::ControllerType::Gamepad, SDL_CONTROLLER_BUTTON_DPAD_DOWN);
+	input.AddAxisButton(HASH("primary.horizontal", 0x520B651B), HASH("primary.left", 0x174671DF), KEngineBasics::AxisType::Horizontal, -1, KEngineBasics::ControllerType::Gamepad, SDL_CONTROLLER_BUTTON_DPAD_LEFT);
+	input.AddAxisButton(HASH("primary.horizontal", 0x520B651B), HASH("primary.right", 0xE1A272AD), KEngineBasics::AxisType::Horizontal, 1, KEngineBasics::ControllerType::Gamepad, SDL_CONTROLLER_BUTTON_DPAD_RIGHT);
+	input.AddAxisButton(HASH("primary.vertical", 0x6ED1CEFB), HASH("primary.down", 0x71DE068C), KEngineBasics::AxisType::Vertical, -1, KEngineBasics::ControllerType::Gamepad, SDL_CONTROLLER_BUTTON_DPAD_UP);
+	input.AddAxisButton(HASH("primary.vertical", 0x6ED1CEFB), HASH("primary.up", 0x8840872B), KEngineBasics::AxisType::Vertical, 1, KEngineBasics::ControllerType::Gamepad, SDL_CONTROLLER_BUTTON_DPAD_DOWN);
 
-	input.AddAxisButton("primary.horizontal", "primary.left", KEngineBasics::AxisType::Horizontal, -1, KEngineBasics::ControllerType::Keyboard, SDL_SCANCODE_A);
-	input.AddAxisButton("primary.horizontal", "primary.right", KEngineBasics::AxisType::Horizontal, 1, KEngineBasics::ControllerType::Keyboard, SDL_SCANCODE_D);
-	input.AddAxisButton("primary.vertical", "primary.down", KEngineBasics::AxisType::Vertical, -1, KEngineBasics::ControllerType::Keyboard, SDL_SCANCODE_W);
-	input.AddAxisButton("primary.vertical", "primary.up", KEngineBasics::AxisType::Vertical, 1, KEngineBasics::ControllerType::Keyboard, SDL_SCANCODE_S);
+	input.AddAxisButton(HASH("primary.horizontal", 0x520B651B), HASH("primary.left", 0x174671DF), KEngineBasics::AxisType::Horizontal, -1, KEngineBasics::ControllerType::Keyboard, SDL_SCANCODE_A);
+	input.AddAxisButton(HASH("primary.horizontal", 0x520B651B), HASH("primary.right", 0xE1A272AD), KEngineBasics::AxisType::Horizontal, 1, KEngineBasics::ControllerType::Keyboard, SDL_SCANCODE_D);
+	input.AddAxisButton(HASH("primary.vertical", 0x6ED1CEFB), HASH("primary.down", 0x71DE068C), KEngineBasics::AxisType::Vertical, -1, KEngineBasics::ControllerType::Keyboard, SDL_SCANCODE_W);
+	input.AddAxisButton(HASH("primary.vertical", 0x6ED1CEFB), HASH("primary.up", 0x8840872B), KEngineBasics::AxisType::Vertical, 1, KEngineBasics::ControllerType::Keyboard, SDL_SCANCODE_S);
 
-	input.AddAxisButton("primary.horizontal", "primary.left", KEngineBasics::AxisType::Horizontal, -1, KEngineBasics::ControllerType::Keyboard, SDL_SCANCODE_LEFT);
-	input.AddAxisButton("primary.horizontal", "primary.right", KEngineBasics::AxisType::Horizontal, 1, KEngineBasics::ControllerType::Keyboard, SDL_SCANCODE_RIGHT);
-	input.AddAxisButton("primary.vertical", "primary.down", KEngineBasics::AxisType::Vertical, -1, KEngineBasics::ControllerType::Keyboard, SDL_SCANCODE_UP);
-	input.AddAxisButton("primary.vertical", "primary.up", KEngineBasics::AxisType::Vertical, 1, KEngineBasics::ControllerType::Keyboard, SDL_SCANCODE_DOWN);
+	input.AddAxisButton(HASH("primary.horizontal", 0x520B651B), HASH("primary.left", 0x174671DF), KEngineBasics::AxisType::Horizontal, -1, KEngineBasics::ControllerType::Keyboard, SDL_SCANCODE_LEFT);
+	input.AddAxisButton(HASH("primary.horizontal", 0x520B651B), HASH("primary.right", 0xE1A272AD), KEngineBasics::AxisType::Horizontal, 1, KEngineBasics::ControllerType::Keyboard, SDL_SCANCODE_RIGHT);
+	input.AddAxisButton(HASH("primary.vertical", 0x6ED1CEFB), HASH("primary.down", 0x71DE068C), KEngineBasics::AxisType::Vertical, -1, KEngineBasics::ControllerType::Keyboard, SDL_SCANCODE_UP);
+	input.AddAxisButton(HASH("primary.vertical", 0x6ED1CEFB), HASH("primary.up", 0x8840872B), KEngineBasics::AxisType::Vertical, 1, KEngineBasics::ControllerType::Keyboard, SDL_SCANCODE_DOWN);
 
-	input.AddButton("fire", KEngineBasics::ControllerType::Joystick, 0); 
-	input.AddButton("fire", KEngineBasics::ControllerType::Gamepad, SDL_CONTROLLER_BUTTON_A);
-	input.AddButton("fire", KEngineBasics::ControllerType::Keyboard, SDL_SCANCODE_SPACE);
+	input.AddButton(HASH("fire", 0x58DE09CF), KEngineBasics::ControllerType::Joystick, 0);
+	input.AddButton(HASH("fire", 0x58DE09CF), KEngineBasics::ControllerType::Gamepad, SDL_CONTROLLER_BUTTON_A);
+	input.AddButton(HASH("fire", 0x58DE09CF), KEngineBasics::ControllerType::Keyboard, SDL_SCANCODE_SPACE);
 
-	input.AddButton("pause", KEngineBasics::ControllerType::Gamepad, SDL_CONTROLLER_BUTTON_START);
-	input.AddButton("pause", KEngineBasics::ControllerType::Keyboard, SDL_SCANCODE_ESCAPE);
+	input.AddButton(HASH("pause", 0xD79A92ED), KEngineBasics::ControllerType::Gamepad, SDL_CONTROLLER_BUTTON_START);
+	input.AddButton(HASH("pause", 0xD79A92ED), KEngineBasics::ControllerType::Keyboard, SDL_SCANCODE_ESCAPE);
 
 	SDL_GameController* controller = NULL;
 	for (int i = 0; i < SDL_NumJoysticks(); ++i) {

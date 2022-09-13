@@ -36,7 +36,7 @@ void PlayerShip::Init(KEngineCore::LuaScheduler* luaScheduler, KEngine2D::Hierar
 
 	mSelfTransform.SetTranslation(position);
 
-	mGraphic.Init(renderer, spriteFactory->PlayerShipSprite(HASH("Ship", 0x5A02441A)), &mModelTransform);
+	mGraphic.Init(renderer, spriteFactory->GetSprite(HASH("Ship", 0x5A02441A)), &mModelTransform);
 
 	mScript.Init(luaScheduler, "playerShip.lua", false);
 

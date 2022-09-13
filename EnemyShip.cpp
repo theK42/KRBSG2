@@ -32,7 +32,7 @@ void EnemyShip::Init(KEngineCore::LuaScheduler* luaScheduler, KEngine2D::Hierarc
 
 	mSelfTransform.SetTranslation(position);
 
-	mGraphic.Init(renderer, spriteFactory->EnemyShipSprite(HASH("Ship", 0x5A02441A)), &mModelTransform);
+	mGraphic.Init(renderer, spriteFactory->GetSprite(HASH("Ship", 0x5A02441A)), &mModelTransform);
 
 	mScript.Init(luaScheduler, TEMP_SCRIPT_NAME, false);
 

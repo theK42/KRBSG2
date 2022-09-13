@@ -58,7 +58,7 @@ void ProjectileFactory::CreateAttack(const KEngine2D::Transform& origin)
 	projectile->mModelTransform = mPoolParty->GetHierarchyPool().GetItem();
 	projectile->mModelTransform->Init(mHierarchySystem, projectile->mMover, modelUpperLeft);
 	projectile->mSpriteGraphic = mPoolParty->GetSpritePool().GetItem();
-	projectile->mSpriteGraphic->Init(mRenderer, mSpriteFactory->ProjectileSprite(mBlueprint.spriteId), projectile->mModelTransform);
+	projectile->mSpriteGraphic->Init(mRenderer, mSpriteFactory->GetSprite(mBlueprint.spriteId), projectile->mModelTransform);
 	projectile->mLifeTime = mPoolParty->GetTimePool().GetItem();
 	projectile->mLifeTime->Init(mTimer, 10.0, false, [projectile]() 
 	{

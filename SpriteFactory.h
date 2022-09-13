@@ -3,6 +3,10 @@
 #include "SpriteRenderer.h"
 #include <map>
 
+namespace KEngineCore {
+    class DataTree;
+}
+
 namespace KEngineOpenGL {
     class ShaderFactory;
     class TextureFactory;
@@ -11,19 +15,21 @@ namespace KEngineOpenGL {
 class SpriteFactory
 {
 public:
-    void Init(KEngineOpenGL::ShaderFactory* shaderFactory, KEngineOpenGL::TextureFactory* textureFactory);
-    const KEngineOpenGL::Sprite* PlayerShipSprite(const KEngineCore::StringHash & shipId);
-    const KEngineOpenGL::Sprite* EnemyShipSprite(const KEngineCore::StringHash& shipId);// , Color color);
-    const KEngineOpenGL::Sprite* StarSprite(const KEngineCore::StringHash& starId);
-    const KEngineOpenGL::Sprite* ProjectileSprite(const KEngineCore::StringHash& starId);
-private:
-    
-    KEngineOpenGL::Sprite playerShipSprite;  // Lol.
+    SpriteFactory();
+    ~SpriteFactory();
 
-    KEngineOpenGL::Sprite blasterSprite;  // Ugh, might as well.
+    void Init(KEngineOpenGL::ShaderFactory* shaderFactory, KEngineOpenGL::TextureFactory* textureFactory, KEngineCore::DataTree * dataRoot);
+    void Deinit();
+
+    const KEngineOpenGL::Sprite* GetSprite(const KEngineCore::StringHash& spriteId);
+
+private:
+    std::map<KEngineCore::StringHash, KEngineOpenGL::Sprite> mSpriteCache;
 
     bool  mInitialized{ false };
 
     KEngineOpenGL::ShaderFactory* mShaderFactory;
     KEngineOpenGL::TextureFactory* mTextureFactory;
+
+    KEngineCore::DataTree* mSpriteData;
 };
