@@ -42,6 +42,8 @@ class ProjectileFactory;
 
 struct Projectile
 {
+	KEngineCore::DisposableGroup				mDisposables;
+
 	KEngine2D::UpdatingMechanicalTransform*		mMover{ nullptr };
 	KEngine2D::UpdatingHierarchicalTransform*	mModelTransform{ nullptr };
 	KEngineOpenGL::SpriteGraphic*				mSpriteGraphic{ nullptr };

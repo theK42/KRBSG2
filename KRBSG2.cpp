@@ -126,7 +126,7 @@ int main(int argc, char** argv)
 	projectileFactory.Init(&poolParty, &luaScheduler, &timer, &hierarchySystem, &mechanicsSystem, &renderer, &spriteFactory, blasterBlueprint);
 	weaponSystem.Init(&luaScheduler, &projectileFactory);
 	playerShipSystem.Init(&luaScheduler, &hierarchySystem, &renderer, &spriteFactory, &weaponSystem);
-	enemyShipSystem.Init(&luaScheduler, &hierarchySystem, &renderer, &spriteFactory);
+	enemyShipSystem.Init(&poolParty, &luaScheduler, &hierarchySystem, &renderer, &spriteFactory, dataRoot.GetBranch(HASH("sheetName", 0x7E99E530), HASH("Enemies", 0xB7BF73A2))->GetBranch(HASH("name", 0x5E237E06), HASH("basic", 0x90797553)));
 	mainThread.Init(&luaScheduler, "script.lua", true);
 
 

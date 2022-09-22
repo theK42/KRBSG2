@@ -4,23 +4,30 @@
 #include "SpriteRenderer.h"
 #include "SpriteFactory.h"
 #include "LuaScheduler.h"
+#include "Disposable.h"
 
-class EnemyShip
+
+class PoolParty;
+namespace KEngineCore
 {
-public:
-	EnemyShip();
-	~EnemyShip();
-	void Init(KEngineCore::LuaScheduler* luaScheduler, KEngine2D::HierarchyUpdater* hierarchySystem, KEngineOpenGL::SpriteRenderer* renderer, SpriteFactory* spriteFactory, KEngine2D::Point position);
-	void Deinit();
+	class DataTree;
+}
+
+struct EnemyShip
+{
 	void Move(KEngine2D::Point direction);
-private:
-	//KEngineBox2D::Box2DTransform				mBoxMechanics;
-	KEngine2D::StaticTransform					mSelfTransform;
-	KEngine2D::UpdatingHierarchicalTransform	mModelTransform;
-	//KEngine2D::BoundingArea						mBoundingArea;
-	//KEngine2D::BoundingBox						mBoundary;
-	KEngineOpenGL::SpriteGraphic				mGraphic;
-	KEngineCore::ScheduledLuaThread				mScript;
+
+	KEngine2D::StaticTransform *				mSelfTransform;
+	KEngine2D::UpdatingHierarchicalTransform *	mModelTransform;
+	KEngine2D::BoundingArea *					mBoundingArea;
+	//std::vector<KEngine2D::BoundingBox *>		mBoxes;
+	//std::vector<KEngine2D::BoundingCircle *>	mCircles;
+
+	KEngineOpenGL::SpriteGraphic *				mGraphic;
+	KEngineCore::ScheduledLuaThread *			mScript;
+
+	KEngineCore::DisposableGroup				mDisposables;
+
 	bool										mInitialized;
 };
 
@@ -30,22 +37,24 @@ public:
 	EnemyShipSystem();
 	~EnemyShipSystem();
 
-	void Init(KEngineCore::LuaScheduler* luaScheduler, KEngine2D::HierarchyUpdater* hierarchySystem, KEngineOpenGL::SpriteRenderer* renderer, SpriteFactory* spriteFactory);
+	void Init(PoolParty* poolParty, KEngineCore::LuaScheduler* luaScheduler, KEngine2D::HierarchyUpdater* hierarchySystem, KEngineOpenGL::SpriteRenderer* renderer, SpriteFactory* spriteFactory, KEngineCore::DataTree * shipDescription);
 	void Deinit();
 
-	EnemyShip* CreateEnemyShip(KEngine2D::Point position);
+	EnemyShip* CreateEnemyShip(KEngine2D::Point position, const KEngineCore::DataTree * shipDescription);
 	void ReleaseEnemyShip(EnemyShip* ship);
 
 	void RegisterLibrary(lua_State* luaState, char const* name = "enemyships");
 private:
-	EnemyShip*								mEnemyShipPool;
-	std::list<EnemyShip*>					mFreeEnemyShips;
+	PoolParty*								mPoolParty;
+	KEngineCore::Pool <EnemyShip>			mEnemyShipPool;
 
 	KEngine2D::HierarchyUpdater* mHierarchySystem{ nullptr };
 	KEngineOpenGL::SpriteRenderer* mRenderer{ nullptr };
 	KEngineCore::LuaScheduler* mLuaScheduler{ nullptr };
 	SpriteFactory* mSpriteFactory{ nullptr };
 	KEngineCore::LuaWrapping<EnemyShip>mLuaWrapping;
+
+	KEngineCore::DataTree* mShipDescription{ nullptr };
 };
 
 

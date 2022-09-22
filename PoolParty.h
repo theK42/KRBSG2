@@ -1,5 +1,5 @@
 #pragma once
-#include "Pool.h"
+#include "Disposable.h"
 #include "LuaScheduler.h"
 #include "Timer.h"
 #include "StaticTransform2D.h"
@@ -17,19 +17,24 @@ public:
 	void Init();
 	void Deinit();
 
-	KEngineCore::Pool<KEngineCore::ScheduledLuaThread>& GetLuaPool();
-	KEngineCore::Pool<KEngineCore::Timeout>& GetTimePool();
-	KEngineCore::Pool<KEngine2D::StaticTransform>& GetStaticPool();
-	KEngineCore::Pool<KEngine2D::UpdatingHierarchicalTransform>& GetHierarchyPool();
-	KEngineCore::Pool<KEngine2D::UpdatingMechanicalTransform>& GetMechanicalPool();
-	KEngineCore::Pool<KEngineOpenGL::SpriteGraphic>& GetSpritePool();
+	KEngineCore::RecyclingPool<KEngineCore::ScheduledLuaThread>& GetLuaPool();
+	KEngineCore::RecyclingPool<KEngineCore::Timeout>& GetTimePool();
+	KEngineCore::RecyclingPool<KEngine2D::StaticTransform>& GetStaticPool();
+	KEngineCore::RecyclingPool<KEngine2D::UpdatingHierarchicalTransform>& GetHierarchyPool();
+	KEngineCore::RecyclingPool<KEngine2D::UpdatingMechanicalTransform>& GetMechanicalPool();
+	KEngineCore::RecyclingPool<KEngineOpenGL::SpriteGraphic>& GetSpritePool();
 
 private:
-	KEngineCore::Pool<KEngineCore::ScheduledLuaThread>			mLuaThreadPool;
-	KEngineCore::Pool<KEngineCore::Timeout>						mTimePool;
-	KEngineCore::Pool<KEngine2D::StaticTransform>				mStaticTransformPool;
-	KEngineCore::Pool<KEngine2D::UpdatingHierarchicalTransform>	mHierarchicalTransformPool;
-	KEngineCore::Pool<KEngine2D::UpdatingMechanicalTransform>	mMechanicalTransformPool;
-	KEngineCore::Pool<KEngineOpenGL::SpriteGraphic>				mSpritePool;
+	KEngineCore::RecyclingPool<KEngineCore::ScheduledLuaThread>				mLuaThreadPool;
+	KEngineCore::RecyclingPool<KEngineCore::Timeout>						mTimePool;
+	KEngineCore::RecyclingPool<KEngine2D::StaticTransform>					mStaticTransformPool;
+	KEngineCore::RecyclingPool<KEngine2D::UpdatingHierarchicalTransform>	mHierarchicalTransformPool;
+	KEngineCore::RecyclingPool<KEngine2D::UpdatingMechanicalTransform>		mMechanicalTransformPool;
+	KEngineCore::RecyclingPool<KEngineOpenGL::SpriteGraphic>				mSpritePool;
+
+
+
+
+
 };
 

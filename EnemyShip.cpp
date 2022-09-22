@@ -1,63 +1,14 @@
 #include "EnemyShip.h"
 #include "SpriteFactory.h"
+#include "PoolParty.h"
+#include "DataTree.h"
 #include <assert.h>
 #include <numbers>
 
-EnemyShip::EnemyShip()
-{
-	mInitialized = false;
-}
-
-EnemyShip::~EnemyShip()
-{
-	Deinit();
-}
-
-const int TEMP_DIMENSION = 40;
-const char * TEMP_SCRIPT_NAME = "enemyShip.lua";
-void EnemyShip::Init(KEngineCore::LuaScheduler* luaScheduler, KEngine2D::HierarchyUpdater* hierarchySystem, KEngineOpenGL::SpriteRenderer* renderer, SpriteFactory* spriteFactory, KEngine2D::Point position)
-{
-	int width = TEMP_DIMENSION;
-	int height = TEMP_DIMENSION;
-
-	KEngine2D::StaticTransform initialTransform(position);
-	//mBoundary.Init(&initialTransform, width, height);
-	//mBoundingArea.Init(&initialTransform);
-	//mBoundingArea.AddBoundingBox(&mBoundary);
-
-	KEngine2D::Point modelUpperLeft = { -width / 2.0f, -height / 2.0f };
-	KEngine2D::StaticTransform modelTransform(modelUpperLeft, std::numbers::pi);
-
-	mModelTransform.Init(hierarchySystem, &mSelfTransform, modelTransform);
-
-	mSelfTransform.SetTranslation(position);
-
-	mGraphic.Init(renderer, spriteFactory->GetSprite(HASH("Ship", 0x5A02441A)), &mModelTransform);
-
-	mScript.Init(luaScheduler, TEMP_SCRIPT_NAME, false);
-
-	lua_State* scriptState = mScript.GetThreadState();
-
-	lua_checkstack(scriptState, 1);
-	lua_pushlightuserdata(scriptState, this);
-
-	mScript.Resume(1);
-
-	mInitialized = true;
-}
-
-void EnemyShip::Deinit()
-{
-	mScript.Deinit();
-	mGraphic.Deinit();
-	mModelTransform.Deinit();
-	//mBoundary.Deinit();
-	mInitialized = false;
-}
 
 void EnemyShip::Move(KEngine2D::Point direction)
 {
-	mSelfTransform.SetTranslation(mSelfTransform.GetTranslation() + direction);
+	mSelfTransform->SetTranslation(mSelfTransform->GetTranslation() + direction);
 }
 
 EnemyShipSystem::EnemyShipSystem()
@@ -69,18 +20,16 @@ EnemyShipSystem::~EnemyShipSystem()
 }
 
 const int TEMP_POOL_SIZE = 100;
-void EnemyShipSystem::Init(KEngineCore::LuaScheduler* luaScheduler, KEngine2D::HierarchyUpdater* hierarchySystem, KEngineOpenGL::SpriteRenderer* renderer, SpriteFactory* spriteFactory)
+void EnemyShipSystem::Init(PoolParty* poolParty, KEngineCore::LuaScheduler* luaScheduler, KEngine2D::HierarchyUpdater* hierarchySystem, KEngineOpenGL::SpriteRenderer* renderer, SpriteFactory* spriteFactory, KEngineCore::DataTree* shipDescription)
 {
 	assert(mLuaScheduler == nullptr);
+	mPoolParty = poolParty;
+	mEnemyShipPool.Init();
 	mLuaScheduler = luaScheduler;
 	mHierarchySystem = hierarchySystem;
 	mRenderer = renderer;
 	mSpriteFactory = spriteFactory;
-
-	mEnemyShipPool = new EnemyShip[TEMP_POOL_SIZE];
-	for (int i = 0; i < TEMP_POOL_SIZE; i++) {
-		mFreeEnemyShips.push_back(&mEnemyShipPool[i]);
-	}
+	mShipDescription = shipDescription;
 
 	RegisterLibrary(luaScheduler->GetMainState());
 }
@@ -91,26 +40,42 @@ void EnemyShipSystem::Deinit()
 	mHierarchySystem = nullptr;
 	mRenderer = nullptr;
 	mSpriteFactory = nullptr;
-	
-	delete[] mEnemyShipPool;
-	mEnemyShipPool = nullptr;
-	mFreeEnemyShips.clear();
+	mEnemyShipPool.Clear();
+	mEnemyShipPool.Deinit();
 }
 
-EnemyShip* EnemyShipSystem::CreateEnemyShip(KEngine2D::Point position)
+EnemyShip* EnemyShipSystem::CreateEnemyShip(KEngine2D::Point position, const KEngineCore::DataTree * shipDescription)
 {
-	assert(mEnemyShipPool != nullptr);
-	EnemyShip* enemyShip = mFreeEnemyShips.front();
-	if (enemyShip) {
-		mFreeEnemyShips.pop_front();
-		enemyShip->Init(mLuaScheduler, mHierarchySystem, mRenderer, mSpriteFactory, position);
-	}
+	EnemyShip* enemyShip = mEnemyShipPool.GetItem();
+
+	enemyShip->mSelfTransform = mPoolParty->GetStaticPool().GetItem(&enemyShip->mDisposables);
+	*enemyShip->mSelfTransform = KEngine2D::StaticTransform::Identity();
+	enemyShip->mSelfTransform->SetTranslation(position);
+	
+	const auto * sprite = mSpriteFactory->GetSprite(shipDescription->GetHash(HASH("sprite", 0x351D8F9E)));
+	int width = sprite->width;
+	int height = sprite->height;
+	KEngine2D::Point modelUpperLeft = { -width / 2.0f, -height / 2.0f };    
+	KEngine2D::StaticTransform modelTransform(modelUpperLeft, std::numbers::pi);
+	enemyShip->mModelTransform = mPoolParty->GetHierarchyPool().GetItem(&enemyShip->mDisposables);
+	enemyShip->mModelTransform->Init(mHierarchySystem, enemyShip->mSelfTransform, modelTransform);
+	enemyShip->mGraphic = mPoolParty->GetSpritePool().GetItem(&enemyShip->mDisposables);
+	enemyShip->mGraphic->Init(mRenderer, sprite, enemyShip->mModelTransform);
+	
+	enemyShip->mScript = mPoolParty->GetLuaPool().GetItem(&enemyShip->mDisposables);
+	enemyShip->mScript->Init(mLuaScheduler, shipDescription->GetString(HASH("script", 0x1C81873A)));
+	lua_State* scriptState = enemyShip->mScript->GetThreadState();
+	lua_checkstack(scriptState, 1);
+	lua_pushlightuserdata(scriptState, enemyShip);
+	enemyShip->mScript->Resume(1);
+
+	enemyShip->mInitialized = true;
 	return enemyShip;
 }
 
 void EnemyShipSystem::ReleaseEnemyShip(EnemyShip* ship)
 {
-	mFreeEnemyShips.push_back(ship);
+	mEnemyShipPool.ReleaseItem(ship);
 }
 
 void EnemyShipSystem::RegisterLibrary(lua_State* luaState, char const* name)
@@ -133,7 +98,7 @@ void EnemyShipSystem::RegisterLibrary(lua_State* luaState, char const* name)
 
 			KEngine2D::Point position = { x, y };
 
-			EnemyShip* enemyShip = factory->CreateEnemyShip(position);
+			EnemyShip* enemyShip = factory->CreateEnemyShip(position, factory->mShipDescription);
 			return 0;
 		};
 
@@ -165,7 +130,8 @@ void EnemyShipSystem::RegisterLibrary(lua_State* luaState, char const* name)
 		auto despawn = [](lua_State* luaState) -> int {
 			EnemyShipSystem* enemyShipSystem = (EnemyShipSystem*)lua_touserdata(luaState, lua_upvalueindex(1));
 			EnemyShip* ship = enemyShipSystem->mLuaWrapping.Unwrap(luaState, 1);
-			ship->Deinit();
+			ship->mDisposables.Deinit();
+			ship->mInitialized = false;
 			enemyShipSystem->ReleaseEnemyShip(ship);
 			return 0;
 		};

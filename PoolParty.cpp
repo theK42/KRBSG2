@@ -29,32 +29,32 @@ void PoolParty::Deinit()
 	mSpritePool.Deinit();
 }
 
-KEngineCore::Pool<KEngineCore::ScheduledLuaThread>& PoolParty::GetLuaPool()
+KEngineCore::RecyclingPool<KEngineCore::ScheduledLuaThread>& PoolParty::GetLuaPool()
 {
 	return mLuaThreadPool;
 }
 
-KEngineCore::Pool<KEngineCore::Timeout>& PoolParty::GetTimePool()
+KEngineCore::RecyclingPool<KEngineCore::Timeout>& PoolParty::GetTimePool()
 {
 	return mTimePool;
 }
 
-KEngineCore::Pool<KEngine2D::StaticTransform>& PoolParty::GetStaticPool()
+KEngineCore::RecyclingPool<KEngine2D::StaticTransform>& PoolParty::GetStaticPool()
 {
 	return mStaticTransformPool;
 }
 
-KEngineCore::Pool<KEngine2D::UpdatingHierarchicalTransform>& PoolParty::GetHierarchyPool()
+KEngineCore::RecyclingPool<KEngine2D::UpdatingHierarchicalTransform>& PoolParty::GetHierarchyPool()
 {
 	return mHierarchicalTransformPool;
 }
 
-KEngineCore::Pool<KEngine2D::UpdatingMechanicalTransform>& PoolParty::GetMechanicalPool()
+KEngineCore::RecyclingPool<KEngine2D::UpdatingMechanicalTransform>& PoolParty::GetMechanicalPool()
 {
 	return mMechanicalTransformPool;
 }
 
-KEngineCore::Pool<KEngineOpenGL::SpriteGraphic>& PoolParty::GetSpritePool()
+KEngineCore::RecyclingPool<KEngineOpenGL::SpriteGraphic>& PoolParty::GetSpritePool()
 {
 	return mSpritePool;
 }
