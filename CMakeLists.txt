@@ -29,8 +29,11 @@ add_submodule(KEngineBasics)
 
 add_executable(KRBSG2 
 KRBSG2.cpp
+KRBSG2Constants.h
 KRBSGLuaBinding.h
 KRBSGLuaBinding.cpp
+CollisionDispatcher.h
+CollisionDispatcher.cpp
 SpriteFactory.h
 SpriteFactory.cpp
 PlayerShip.h

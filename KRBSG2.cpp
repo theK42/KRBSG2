@@ -5,6 +5,7 @@
 #include "PoolParty.h"
 #include "ProjectileFactory.h"
 #include "SpriteFactory.h"
+#include "CollisionDispatcher.h"
 #include "SDL.h"
 #include "Input.h"
 #include "Audio.h"
@@ -16,9 +17,11 @@
 #include "StaticTransform2D.h"
 #include "HierarchicalTransform2D.h"
 #include "MechanicalTransform2D.h"
+#include "Collision2D.h"
 #include "LuaScheduler.h"
 #include "Timer.h"
 #include "DataTree.h"
+#include "Psychopomp.h"
 #include <iostream>
 #include <limits>
 #include <stdio.h>
@@ -76,6 +79,7 @@ int main(int argc, char** argv)
 
 	KEngineOpenGL::InitializeGlad(SDL_GL_GetProcAddress);
 
+	KEngineCore::Psychopomp			psychopomp;
 	KEngineCore::LuaScheduler       luaScheduler;
 	KEngineCore::Timer              timer;
 	KEngine2D::HierarchyUpdater     hierarchySystem;
@@ -96,6 +100,10 @@ int main(int argc, char** argv)
 	ProjectileFactory				projectileFactory;
 	PoolParty						poolParty;
 
+	KRBSGCollisionDispatcher		collisionDispatcher;
+	KEngine2D::CollisionSystem		collisionSystem;
+	KEngineCore::ScheduledLuaThread mainThread;
+	
 
 	KEngineCore::DataTree			dataRoot;
 	std::ifstream dataStream("KRBSG.dat", std::ios::binary);    
@@ -105,8 +113,7 @@ int main(int argc, char** argv)
 	dataRoot.ReadFromStream(dataStream);
 	dataStream.close();
 
-	KEngineCore::ScheduledLuaThread mainThread;
-
+	psychopomp.Init();
 	luaScheduler.Init();
 	timer.Init(&luaScheduler);
 	input.Init(&luaScheduler, &timer);
@@ -116,20 +123,23 @@ int main(int argc, char** argv)
 	hierarchySystem.Init();
 	mechanicsSystem.Init();
 	renderer.Init(WIDTH, HEIGHT);
-
 	shaderFactory.Init();
 	textureFactory.Init();
 	spriteFactory.Init(&shaderFactory, &textureFactory, &dataRoot);
 	coreLuaBinding.Init(luaScheduler.GetMainState(), &luaScheduler, &hierarchySystem, &renderer, &spriteFactory, [&loop]() {loop = false; });
 	ProjectileDescription blasterBlueprint{ HASH("Blaster", 0x196F6AFE) , {0.0f, -500.0f}, 2.0f };
+	collisionDispatcher.Init(&psychopomp);
+	collisionSystem.Init(&collisionDispatcher);
 	poolParty.Init();
-	projectileFactory.Init(&poolParty, &luaScheduler, &timer, &hierarchySystem, &mechanicsSystem, &renderer, &spriteFactory, blasterBlueprint);
+	projectileFactory.Init(&poolParty, &luaScheduler, &timer, &hierarchySystem, &mechanicsSystem, &renderer, &spriteFactory, &collisionSystem, &collisionDispatcher, blasterBlueprint);
 	weaponSystem.Init(&luaScheduler, &projectileFactory);
 	playerShipSystem.Init(&luaScheduler, &hierarchySystem, &renderer, &spriteFactory, &weaponSystem);
-	enemyShipSystem.Init(&poolParty, &luaScheduler, &hierarchySystem, &renderer, &spriteFactory, dataRoot.GetBranch(HASH("sheetName", 0x7E99E530), HASH("Enemies", 0xB7BF73A2))->GetBranch(HASH("name", 0x5E237E06), HASH("basic", 0x90797553)));
+	auto enemyShipDescription = dataRoot.GetBranch(HASH("sheetName", 0x7E99E530), HASH("Enemies", 0xB7BF73A2))->GetBranch(HASH("name", 0x5E237E06), HASH("basic", 0x90797553));
+	auto collisionData = dataRoot.GetBranch(HASH("sheetName", 0x7E99E530), HASH("CollisionShapes", 0x5EDD4EE1));
+
+	enemyShipSystem.Init(&poolParty, &luaScheduler, &hierarchySystem, &renderer, &spriteFactory, &collisionSystem, &collisionDispatcher, enemyShipDescription, collisionData);
 	mainThread.Init(&luaScheduler, "script.lua", true);
-
-
+		
 	input.AddCombinedAxis(HASH("primary", 0x1745EA86));
 
 	input.AddChildAxis(HASH("primary", 0x1745EA86), HASH("primary.horizontal", 0x520B651B), KEngineBasics::AxisType::Horizontal, KEngineBasics::ControllerType::Joystick, 0);
@@ -189,6 +199,8 @@ int main(int argc, char** argv)
 		luaScheduler.Update();
 		hierarchySystem.Update(elapsedTimeInSeconds);
 		mechanicsSystem.Update(elapsedTimeInSeconds);
+		collisionSystem.Update();
+		psychopomp.Update();
 		renderer.Render();
 		SDL_GL_SwapWindow(window);
 
@@ -242,7 +254,9 @@ int main(int argc, char** argv)
 	audio.Deinit();
 	input.Deinit();
 	timer.Deinit();
+	collisionSystem.Deinit();
 	poolParty.Deinit();
+	psychopomp.Deinit(); //With strange aeons
 
 	/* Frees memory */
 	SDL_DestroyWindow(window);

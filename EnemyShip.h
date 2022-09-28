@@ -5,28 +5,35 @@
 #include "SpriteFactory.h"
 #include "LuaScheduler.h"
 #include "Disposable.h"
+#include "Collision2D.h"
 
 
+class KRBSGCollisionDispatcher;
 class PoolParty;
 namespace KEngineCore
 {
 	class DataTree;
 }
 
+
+class EnemyShipSystem;
+
 struct EnemyShip
 {
 	void Move(KEngine2D::Point direction);
+	void Die();
 
+	EnemyShipSystem *							mSystem;
 	KEngine2D::StaticTransform *				mSelfTransform;
 	KEngine2D::UpdatingHierarchicalTransform *	mModelTransform;
 	KEngine2D::BoundingArea *					mBoundingArea;
-	//std::vector<KEngine2D::BoundingBox *>		mBoxes;
-	//std::vector<KEngine2D::BoundingCircle *>	mCircles;
 
 	KEngineOpenGL::SpriteGraphic *				mGraphic;
 	KEngineCore::ScheduledLuaThread *			mScript;
 
 	KEngineCore::DisposableGroup				mDisposables;
+
+	KEngine2D::ColliderHandle					mColliderHandle;
 
 	bool										mInitialized;
 };
@@ -37,11 +44,12 @@ public:
 	EnemyShipSystem();
 	~EnemyShipSystem();
 
-	void Init(PoolParty* poolParty, KEngineCore::LuaScheduler* luaScheduler, KEngine2D::HierarchyUpdater* hierarchySystem, KEngineOpenGL::SpriteRenderer* renderer, SpriteFactory* spriteFactory, KEngineCore::DataTree * shipDescription);
+	void Init(PoolParty* poolParty, KEngineCore::LuaScheduler* luaScheduler, KEngine2D::HierarchyUpdater* hierarchySystem, KEngineOpenGL::SpriteRenderer* renderer, SpriteFactory* spriteFactory, KEngine2D::CollisionSystem * collisionSystem, KRBSGCollisionDispatcher * collisionDispatcher,  KEngineCore::DataTree* shipDescription, KEngineCore::DataTree* collisionsData);
 	void Deinit();
 
 	EnemyShip* CreateEnemyShip(KEngine2D::Point position, const KEngineCore::DataTree * shipDescription);
 	void ReleaseEnemyShip(EnemyShip* ship);
+
 
 	void RegisterLibrary(lua_State* luaState, char const* name = "enemyships");
 private:
@@ -54,7 +62,11 @@ private:
 	SpriteFactory* mSpriteFactory{ nullptr };
 	KEngineCore::LuaWrapping<EnemyShip>mLuaWrapping;
 
+	KEngine2D::CollisionSystem* mCollisionSystem{ nullptr };
+	KRBSGCollisionDispatcher* mCollisionDispatcher{ nullptr };
+
 	KEngineCore::DataTree* mShipDescription{ nullptr };
+	KEngineCore::DataTree* mCollisionsData{ nullptr };
 };
 
 

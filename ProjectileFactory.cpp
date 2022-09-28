@@ -1,5 +1,7 @@
 #include "ProjectileFactory.h"
+#include "CollisionDispatcher.h"
 #include "SpriteFactory.h"
+#include "KRBSG2Constants.h"
 
 
 ProjectileFactory::ProjectileFactory() : AttackFactory()
@@ -11,7 +13,7 @@ ProjectileFactory::~ProjectileFactory()
 	Deinit();
 }
 
-void ProjectileFactory::Init(PoolParty* poolParty, KEngineCore::LuaScheduler* luaScheduler, KEngineCore::Timer * timer, KEngine2D::HierarchyUpdater* hierarchySystem, KEngine2D::MechanicsUpdater* mechanicsSystem, KEngineOpenGL::SpriteRenderer* renderer, SpriteFactory* spriteFactory, ProjectileDescription blueprint)
+void ProjectileFactory::Init(PoolParty* poolParty, KEngineCore::LuaScheduler* luaScheduler, KEngineCore::Timer * timer, KEngine2D::HierarchyUpdater* hierarchySystem, KEngine2D::MechanicsUpdater* mechanicsSystem, KEngineOpenGL::SpriteRenderer* renderer, SpriteFactory* spriteFactory, KEngine2D::CollisionSystem * collisionSystem, KRBSGCollisionDispatcher* collisionDispatcher, ProjectileDescription blueprint)
 {
 	assert(mPoolParty == nullptr);
 	mPoolParty = poolParty;
@@ -21,6 +23,8 @@ void ProjectileFactory::Init(PoolParty* poolParty, KEngineCore::LuaScheduler* lu
 	mMechanicsSystem = mechanicsSystem;
 	mRenderer = renderer;
 	mSpriteFactory = spriteFactory;
+	mCollisionSystem = collisionSystem;
+	mCollisionDispatcher = collisionDispatcher;
 	mProjectilePool.Init();
 	mBlueprint = blueprint;
 }
@@ -48,6 +52,7 @@ void ProjectileFactory::CreateAttack(const KEngine2D::Transform& origin)
 {
 	Projectile* projectile = mProjectilePool.GetItem();
 	projectile->mProjectileFactory = this;
+	projectile->mDisposables.Init();
 	projectile->mMover = mPoolParty->GetMechanicalPool().GetItem(&projectile->mDisposables);
 	projectile->mMover->Init(mMechanicsSystem, origin, mBlueprint.velocity);
 
@@ -60,6 +65,19 @@ void ProjectileFactory::CreateAttack(const KEngine2D::Transform& origin)
 	projectile->mSpriteGraphic = mPoolParty->GetSpritePool().GetItem(&projectile->mDisposables);
 	projectile->mSpriteGraphic->Init(mRenderer, mSpriteFactory->GetSprite(mBlueprint.spriteId), projectile->mModelTransform);
 	projectile->mLifeTime = mPoolParty->GetTimePool().GetItem(&projectile->mDisposables);
+
+	auto box = mPoolParty->GetBoxPool().GetItem(&projectile->mDisposables);
+	box->Init(projectile->mMover, 5, 40);
+	auto bounds = mPoolParty->GetBoundsPool().GetItem(&projectile->mDisposables);
+	bounds->Init(projectile->mMover);
+	bounds->AddBoundingBox(box);
+	auto collider = mPoolParty->GetColliderPool().GetItem(&projectile->mDisposables);
+	collider->Init(mCollisionSystem, bounds, PlayerProjectileFlag, EnemyShipFlag);
+
+
+	projectile->mColliderHandle = collider->GetHandle();
+	mCollisionDispatcher->AddProjectile(projectile, collider->GetHandle());
+
 	projectile->mLifeTime->Init(mTimer, 10.0, false, [projectile]() 
 	{
 		projectile->mProjectileFactory->RecycleProjectile(projectile);
@@ -83,10 +101,15 @@ void ProjectileFactory::RecycleProjectile(Projectile* projectile)
 	projectile->mLifeTime->Deinit();
 	mPoolParty->GetTimePool().ReleaseItem(projectile->mLifeTime);
 	projectile->mLifeTime = nullptr;*/
+
+	mCollisionDispatcher->RemoveItem(projectile->mColliderHandle);
+
+
 	if (projectile->mPosition != mProjectilesInFlight.end()) {
 		mProjectilesInFlight.erase(projectile->mPosition);
 		projectile->mPosition = mProjectilesInFlight.end();
 	}
+	projectile->mDisposables.Deinit();
 	mProjectilePool.ReleaseItem(projectile);
 }
 

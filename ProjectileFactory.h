@@ -29,6 +29,7 @@ namespace KEngineOpenGL
 }
 
 class SpriteFactory;
+class KRBSGCollisionDispatcher;
 
 struct ProjectileDescription
 {
@@ -51,6 +52,7 @@ struct Projectile
 	ProjectileFactory*							mProjectileFactory{ nullptr };
 	typedef std::list<Projectile*>::iterator Position;
 	Position	mPosition;
+	KEngine2D::ColliderHandle					mColliderHandle;
 };
 
 class ProjectileFactory : public AttackFactory
@@ -59,7 +61,7 @@ public:
 	ProjectileFactory();
 	virtual ~ProjectileFactory();
 
-	void Init(PoolParty* poolParty, KEngineCore::LuaScheduler* luaScheduler, KEngineCore::Timer * timer, KEngine2D::HierarchyUpdater* hierarchySystem, KEngine2D::MechanicsUpdater* mechanicsSystem, KEngineOpenGL::SpriteRenderer* renderer, SpriteFactory* spriteFactory, ProjectileDescription blueprint);
+	void Init(PoolParty* poolParty, KEngineCore::LuaScheduler* luaScheduler, KEngineCore::Timer * timer, KEngine2D::HierarchyUpdater* hierarchySystem, KEngine2D::MechanicsUpdater* mechanicsSystem, KEngineOpenGL::SpriteRenderer* renderer, SpriteFactory* spriteFactory, KEngine2D::CollisionSystem * collisionSystem, KRBSGCollisionDispatcher * collisionDispatcher, ProjectileDescription blueprint);
 
 	void Deinit();
 
@@ -73,6 +75,9 @@ private:
 	KEngine2D::MechanicsUpdater*	mMechanicsSystem{ nullptr };
 	KEngineOpenGL::SpriteRenderer*	mRenderer{ nullptr };
 	SpriteFactory*					mSpriteFactory{ nullptr };
+
+	KEngine2D::CollisionSystem*		mCollisionSystem{ nullptr };
+	KRBSGCollisionDispatcher*		mCollisionDispatcher{ nullptr };
 
 	KEngineCore::Pool<Projectile>   mProjectilePool;
 	std::list<Projectile*>			mProjectilesInFlight;

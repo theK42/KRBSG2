@@ -6,6 +6,8 @@
 #include "HierarchicalTransform2D.h"
 #include "MechanicalTransform2D.h"
 #include "SpriteRenderer.h"
+#include "Boundaries2D.h"
+#include "Collision2D.h"
 
 
 class PoolParty
@@ -23,6 +25,10 @@ public:
 	KEngineCore::RecyclingPool<KEngine2D::UpdatingHierarchicalTransform>& GetHierarchyPool();
 	KEngineCore::RecyclingPool<KEngine2D::UpdatingMechanicalTransform>& GetMechanicalPool();
 	KEngineCore::RecyclingPool<KEngineOpenGL::SpriteGraphic>& GetSpritePool();
+	KEngineCore::RecyclingPool<KEngine2D::BoundingBox>& GetBoxPool();
+	KEngineCore::RecyclingPool<KEngine2D::BoundingCircle>& GetCirclePool();
+	KEngineCore::RecyclingPool<KEngine2D::BoundingArea>& GetBoundsPool();
+	KEngineCore::RecyclingPool<KEngine2D::Collider>& GetColliderPool();
 
 private:
 	KEngineCore::RecyclingPool<KEngineCore::ScheduledLuaThread>				mLuaThreadPool;
@@ -31,6 +37,11 @@ private:
 	KEngineCore::RecyclingPool<KEngine2D::UpdatingHierarchicalTransform>	mHierarchicalTransformPool;
 	KEngineCore::RecyclingPool<KEngine2D::UpdatingMechanicalTransform>		mMechanicalTransformPool;
 	KEngineCore::RecyclingPool<KEngineOpenGL::SpriteGraphic>				mSpritePool;
+	KEngineCore::RecyclingPool<KEngine2D::BoundingBox>						mBoxPool;
+	KEngineCore::RecyclingPool<KEngine2D::BoundingCircle>					mCirclePool;
+	KEngineCore::RecyclingPool<KEngine2D::BoundingArea>						mBoundsPool;
+	KEngineCore::RecyclingPool<KEngine2D::Collider>							mColliderPool;
+
 
 
 

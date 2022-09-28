@@ -1,4 +1,6 @@
 #include "EnemyShip.h"
+#include "KRBSG2Constants.h"
+#include "CollisionDispatcher.h"
 #include "SpriteFactory.h"
 #include "PoolParty.h"
 #include "DataTree.h"
@@ -11,6 +13,13 @@ void EnemyShip::Move(KEngine2D::Point direction)
 	mSelfTransform->SetTranslation(mSelfTransform->GetTranslation() + direction);
 }
 
+void EnemyShip::Die()
+{
+	mDisposables.Deinit();
+	mInitialized = false;
+	mSystem->ReleaseEnemyShip(this);
+}
+
 EnemyShipSystem::EnemyShipSystem()
 {
 }
@@ -19,8 +28,7 @@ EnemyShipSystem::~EnemyShipSystem()
 {
 }
 
-const int TEMP_POOL_SIZE = 100;
-void EnemyShipSystem::Init(PoolParty* poolParty, KEngineCore::LuaScheduler* luaScheduler, KEngine2D::HierarchyUpdater* hierarchySystem, KEngineOpenGL::SpriteRenderer* renderer, SpriteFactory* spriteFactory, KEngineCore::DataTree* shipDescription)
+void EnemyShipSystem::Init(PoolParty* poolParty, KEngineCore::LuaScheduler* luaScheduler, KEngine2D::HierarchyUpdater* hierarchySystem, KEngineOpenGL::SpriteRenderer* renderer, SpriteFactory* spriteFactory, KEngine2D::CollisionSystem * collisionSystem, KRBSGCollisionDispatcher * collisionDispatcher, KEngineCore::DataTree* shipDescription, KEngineCore::DataTree* collisionData)
 {
 	assert(mLuaScheduler == nullptr);
 	mPoolParty = poolParty;
@@ -29,7 +37,11 @@ void EnemyShipSystem::Init(PoolParty* poolParty, KEngineCore::LuaScheduler* luaS
 	mHierarchySystem = hierarchySystem;
 	mRenderer = renderer;
 	mSpriteFactory = spriteFactory;
+	mCollisionSystem = collisionSystem;
+	mCollisionDispatcher = collisionDispatcher;
+
 	mShipDescription = shipDescription;
+	mCollisionsData = collisionData;
 
 	RegisterLibrary(luaScheduler->GetMainState());
 }
@@ -48,15 +60,18 @@ EnemyShip* EnemyShipSystem::CreateEnemyShip(KEngine2D::Point position, const KEn
 {
 	EnemyShip* enemyShip = mEnemyShipPool.GetItem();
 
+	enemyShip->mSystem = this;
+
 	enemyShip->mSelfTransform = mPoolParty->GetStaticPool().GetItem(&enemyShip->mDisposables);
 	*enemyShip->mSelfTransform = KEngine2D::StaticTransform::Identity();
 	enemyShip->mSelfTransform->SetTranslation(position);
+	enemyShip->mSelfTransform->SetRotation(std::numbers::pi);
 	
 	const auto * sprite = mSpriteFactory->GetSprite(shipDescription->GetHash(HASH("sprite", 0x351D8F9E)));
 	int width = sprite->width;
 	int height = sprite->height;
 	KEngine2D::Point modelUpperLeft = { -width / 2.0f, -height / 2.0f };    
-	KEngine2D::StaticTransform modelTransform(modelUpperLeft, std::numbers::pi);
+	KEngine2D::StaticTransform modelTransform(modelUpperLeft);
 	enemyShip->mModelTransform = mPoolParty->GetHierarchyPool().GetItem(&enemyShip->mDisposables);
 	enemyShip->mModelTransform->Init(mHierarchySystem, enemyShip->mSelfTransform, modelTransform);
 	enemyShip->mGraphic = mPoolParty->GetSpritePool().GetItem(&enemyShip->mDisposables);
@@ -69,12 +84,62 @@ EnemyShip* EnemyShipSystem::CreateEnemyShip(KEngine2D::Point position, const KEn
 	lua_pushlightuserdata(scriptState, enemyShip);
 	enemyShip->mScript->Resume(1);
 
+	auto bounds = mPoolParty->GetBoundsPool().GetItem(&enemyShip->mDisposables);
+	bounds->Init(enemyShip->mSelfTransform);
+
+	auto collisionShapeName = shipDescription->GetHash(HASH("collider", 0xCA3D45D7));
+	KEngineCore::DataTree* collisionData = mCollisionsData->GetBranch(HASH("name", 0x5E237E06), collisionShapeName);
+
+	KEngineCore::DataTree* shapesData = collisionData->GetBranch(HASH("branchName", 0xD7728FA9), HASH("shapes", 0x93DBA512));
+	int collisionShapeCount = shapesData->GetNumBranches();
+	for (int i = 0; i < collisionShapeCount; i++)
+	{
+		KEngineCore::DataTree* shapeDescription = shapesData->GetBranch(i);
+		
+		KEngine2D::StaticTransform tempShapeTransform;
+		tempShapeTransform.Init();
+		tempShapeTransform.SetTranslation({ shapeDescription->GetFloat(HASH("posX", 0x6852006E)), shapeDescription->GetFloat(HASH("posY", 0x1F5530F8)) });
+		tempShapeTransform.SetScale({ shapeDescription->GetFloat(HASH("scaleX", 0x5D8B3757)), shapeDescription->GetFloat(HASH("scaleY", 0x2A8C07C1)) });
+		tempShapeTransform.SetRotation(shapeDescription->GetFloat(HASH("rot", 0x1D39A761)));
+
+		auto shapeTransform = mPoolParty->GetHierarchyPool().GetItem(&enemyShip->mDisposables);
+		shapeTransform->Init(mHierarchySystem, enemyShip->mSelfTransform, tempShapeTransform);
+		
+		KEngineCore::StringHash type = shapeDescription->GetHash(HASH("type", 0x8CDE5729));
+		static auto box = HASH("box", 0x08A9483A);
+		static auto circle = HASH("circle", 0xD4B76579);
+		
+		//TODO:  turn this damn thing into a switch statement.
+		if (type == box) {
+			auto* shape = mPoolParty->GetBoxPool().GetItem(&enemyShip->mDisposables);
+			shape->Init(shapeTransform, shapeDescription->GetInt(HASH("width", 0x8C1A452F)), shapeDescription->GetInt(HASH("height", 0xF54DE50F)));
+			bounds->AddBoundingBox(shape);
+		}
+		else if (type == circle)
+		{
+			auto* shape = mPoolParty->GetCirclePool().GetItem(&enemyShip->mDisposables);
+			shape->Init(shapeTransform, shapeDescription->GetInt(HASH("radius", 0x3B7C6E5A)));
+			bounds->AddBoundingCircle(shape);
+		}
+		else
+		{
+			assert(false); //What shape was it then.
+		}
+	}
+
+	auto collider = mPoolParty->GetColliderPool().GetItem(&enemyShip->mDisposables);
+	collider->Init(mCollisionSystem, bounds, EnemyShipFlag, PlayerShipFlag);
+	enemyShip->mColliderHandle = collider->GetHandle();
+	mCollisionDispatcher->AddEnemyShip(enemyShip, collider->GetHandle());
+
+
 	enemyShip->mInitialized = true;
 	return enemyShip;
 }
 
 void EnemyShipSystem::ReleaseEnemyShip(EnemyShip* ship)
 {
+	mCollisionDispatcher->RemoveItem(ship->mColliderHandle);
 	mEnemyShipPool.ReleaseItem(ship);
 }
 
