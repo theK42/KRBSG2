@@ -61,11 +61,6 @@ magic_space.mp3
 KRBSG.dat
 )
 
-add_custom_command(TARGET KRBSG2 POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_RUNTIME_DLLS:KRBSG2> $<TARGET_FILE_DIR:KRBSG2>
-  COMMAND_EXPAND_LISTS
-)
-
 target_compile_features(KRBSG2 PRIVATE cxx_std_20) 
 configure_file(script.lua script.lua COPYONLY)
 configure_file(playerShip.lua playerShip.lua COPYONLY)
@@ -82,3 +77,15 @@ configure_file(KRBSG.dat KRBSG.dat COPYONLY)
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT KRBSG2)
 target_link_libraries(KRBSG2 PRIVATE KEngineCore KEngine2D KEngineBasics KEngineOpenGL SDL2main)
 
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+	target_link_libraries(KRBSG2 PRIVATE "-framework CoreFoundation")
+endif()
+
+set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY XCODE_SCHEME_WORKING_DIRECTORY ${CURRENT_BINARY_DIR})
+
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+	add_custom_command(TARGET KRBSG2 POST_BUILD
+  		COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_RUNTIME_DLLS:KRBSG2> $<TARGET_FILE_DIR:KRBSG2>
+  		COMMAND_EXPAND_LISTS
+	)
+endif()

@@ -56,13 +56,13 @@ const KEngineOpenGL::Sprite* SpriteFactory::GetSprite(const KEngineCore::StringH
 
 	auto spriteDescriptor = mSpriteData->GetBranch(HASH("name", 0x5E237E06), spriteId);
 
-	int width = spriteDescriptor->GetInt(HASH("width", 0x8C1A452F));
-	int height = spriteDescriptor->GetInt(HASH("height", 0xF54DE50F));
+	float width = spriteDescriptor->GetInt(HASH("width", 0x8C1A452F));
+	float height = spriteDescriptor->GetInt(HASH("height", 0xF54DE50F));
 	const KEngineOpenGL::Vertex Vertices[] = {
-		{ { width, 0, 0 },{ 1, 1, 1, 1 },{ 1,0 } },
-		{ { width, height, 0 },{ 1, 1, 1, 1 },{ 1,1 } },
-		{ { 0, height, 0 },{ 1, 1, 1, 1 },{ 0,1 } },
-		{ { 0, 0, 0 },{ 1, 1, 1, 1 },{ 0,0 } }
+		{ { width, 0.f, 0.f },{ 1.f, 1.f, 1.f, 1.f },{ 1.f, 0.f } },
+		{ { width, height, 0.f },{ 1.f, 1.f, 1.f, 1.f },{ 1.f,1.f } },
+		{ { 0.f, height, 0.f },{ 1.f, 1.f, 1.f, 1.f },{ 0.f,1.f } },
+		{ { 0.f, 0.f, 0.f },{ 1.f, 1.f, 1.f, 1.f },{ 0.f,0.f } }
 	};
 
 	const GLushort Indices[] = {
