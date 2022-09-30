@@ -81,7 +81,10 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	target_link_libraries(KRBSG2 PRIVATE "-framework CoreFoundation")
 endif()
 
-set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY XCODE_SCHEME_WORKING_DIRECTORY ${CURRENT_BINARY_DIR})
+
+set_target_properties(KRBSG2 PROPERTIES 
+                      XCODE_GENERATE_SCHEME TRUE
+                      XCODE_SCHEME_WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	add_custom_command(TARGET KRBSG2 POST_BUILD

@@ -1,0 +1,23 @@
+{
+  "version": 5,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 23,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "MacOS",
+      "displayName": "MacOs build",
+      "description": "Build in XCode to run on MacOS",
+      "generator": "Xcode",
+      "binaryDir": "${sourceDir}/build_macos",
+      "cacheVariables": {
+        "SDL2MIXER_OPUS": "OFF",
+        "SDL2MIXER_FLAC": "OFF",
+        "SDL2MIXER_MOD": "OFF",
+        "SDL2MIXER_MIDI": "OFF"
+      }
+    }
+  ]
+}
