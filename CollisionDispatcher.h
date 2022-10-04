@@ -20,7 +20,7 @@ public:
 	virtual ~KRBSGCollisionDispatcher();
 
 	void Init(KEngineCore::Psychopomp * psychopomp);
-	void Deinit();
+	virtual void Deinit() override;
 
 	void AddEnemyShip(EnemyShip* ship, KEngine2D::ColliderHandle handle);
 	void AddProjectile(Projectile* shot, KEngine2D::ColliderHandle handle);

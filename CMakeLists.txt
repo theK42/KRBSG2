@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.20)
 
 #set the project name
 project(KRBSG2)
@@ -27,6 +27,59 @@ add_submodule(KEngine2D)
 add_submodule(KEngineOpenGL)
 add_submodule(KEngineBasics)
 
+set(dataFiles ${dataFiles} 
+    KRBSG.dat
+)
+
+set(vertexShaders ${vertexShaders}
+    basic.vert.glsl
+)
+
+set(fragmentShaders ${fragmentShaders}
+    textured.frag.glsl
+)
+
+set(textureFiles ${textureFiles}
+    ship.png
+    blaster.png
+)
+
+set(luaScripts ${luaScripts}
+    script.lua
+    playerShip.lua
+    enemyShip.lua
+    blaster.lua
+)
+
+set(soundFiles ${soundFiles}
+    laser1.wav
+    magic_space.mp3
+)
+
+set(codeLikeFiles ${codeLikeFiles}
+    ${luaScripts}
+    ${vertexShaders}
+    ${fragmentShaders}
+)
+
+set(directCopyFiles
+    ${directCopyFiles}
+    ${dataFiles}
+    ${textureFiles}
+    ${luaScripts}
+    ${soundFiles}
+)
+
+set(allFiles
+    ${dataFiles}
+    ${vertexShaders}
+    ${fragmentShaders}
+    ${textureFiles}
+    ${luaScripts}
+    ${soundFiles}
+)
+
+
 add_executable(KRBSG2 
 KRBSG2.cpp
 KRBSG2Constants.h
@@ -48,39 +101,49 @@ ProjectileFactory.h
 ProjectileFactory.cpp
 PoolParty.h
 PoolParty.cpp
-script.lua
-playerShip.lua
-enemyShip.lua
-blaster.lua
-basic.vert.glsl
-textured.frag.glsl
-ship.png
-blaster.png
-laser1.wav
-magic_space.mp3
-KRBSG.dat
+${codeLikeFiles}
 )
 
 target_compile_features(KRBSG2 PRIVATE cxx_std_20) 
-configure_file(script.lua script.lua COPYONLY)
-configure_file(playerShip.lua playerShip.lua COPYONLY)
-configure_file(enemyShip.lua enemyShip.lua COPYONLY)
-configure_file(blaster.lua blaster.lua COPYONLY)
-configure_file(basic.vert.glsl basic.vert.glsl COPYONLY)
-configure_file(textured.frag.glsl textured.frag.glsl COPYONLY)
-configure_file(ship.png ship.png COPYONLY)
-configure_file(blaster.png blaster.png COPYONLY)
-configure_file(laser1.wav laser1.wav COPYONLY)
-configure_file(magic_space.mp3 magic_space.mp3 COPYONLY)
-configure_file(KRBSG.dat KRBSG.dat COPYONLY)
+
+if (${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
+    set(glsl_version_string "300 es")
+else()
+    set(glsl_version_string "330")
+endif()
+
+foreach(shader IN LISTS vertexShaders fragmentShaders)
+    configure_file(${shader} ${shader})
+endforeach()
+
+foreach(file IN LISTS directCopyFiles)
+    configure_file(${file} ${file} COPYONLY)
+endforeach()
 
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT KRBSG2)
-target_link_libraries(KRBSG2 PRIVATE KEngineCore KEngine2D KEngineBasics KEngineOpenGL SDL2main)
+target_link_libraries(KRBSG2 PRIVATE KEngineCore KEngine2D KEngineBasics KEngineOpenGL)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	target_link_libraries(KRBSG2 PRIVATE "-framework CoreFoundation")
 endif()
 
+if( ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
+    set(USE_FLAGS "-s USE_MPG123=1 -s USE_SDL=2 -s USE_SDL_MIXER=2 -s SDL2_MIXER_FORMATS=[\"mp3\"]")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${USE_FLAGS}")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${USE_FLAGS}")
+
+    list(APPEND USE_FLAGS "-s USE_WEBGL2=1")
+    list(APPEND USE_FLAGS "--use-preload-plugins")
+    foreach(file IN LISTS allFiles)
+        list(APPEND USE_FLAGS "--preload-file ${file}")
+    endforeach()
+    list(JOIN USE_FLAGS " " USE_FLAGS)
+
+    message(STATUS "USE_FLAGS is ${USE_FLAGS}")
+
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${USE_FLAGS}")
+    set(CMAKE_EXECUTABLE_SUFFIX ".html")
+endif()
 
 set_target_properties(KRBSG2 PROPERTIES 
                       XCODE_GENERATE_SCHEME TRUE

@@ -1,4 +1,5 @@
-#version 330
+#version @glsl_version_string@
+precision lowp float;
 uniform sampler2D Texture;
 
 in lowp vec4 DestinationColor;

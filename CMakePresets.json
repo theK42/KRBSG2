@@ -18,6 +18,14 @@
         "SDL2MIXER_MOD": "OFF",
         "SDL2MIXER_MIDI": "OFF"
       }
-    }
+    },
+    {
+        "name": "WebASM",
+        "displayName": "WebASM build",
+        "description": "Build in emscripten to run on web",
+        "generator": "Unix Makefiles",
+        "toolchainFile": "/opt/homebrew/Cellar/emscripten/3.1.23/libexec/cmake/Modules/Platform/Emscripten.cmake",
+        "binaryDir": "${sourceDir}/build_webasm"
+      }
   ]
 }

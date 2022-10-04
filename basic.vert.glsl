@@ -1,4 +1,5 @@
-#version 330
+#version @glsl_version_string@
+precision lowp float;
 in vec4 Position;
 in vec4 VertexColor;
 in vec2 TextureCoordinates;
