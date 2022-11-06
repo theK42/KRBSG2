@@ -51,7 +51,7 @@ set(luaScripts ${luaScripts}
     enemyShip.lua
     blaster.lua
     blaster_bolt.lua
-    flyoff.lua
+    Flyoff.lua
 )
 
 set(soundFiles ${soundFiles}
@@ -133,6 +133,7 @@ if( ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
 
     list(APPEND USE_FLAGS "-s USE_WEBGL2=1")
     list(APPEND USE_FLAGS "--use-preload-plugins")
+    #list(APPEND USE_FLAGS "-gsource-map")
     foreach(file IN LISTS allFiles)
         list(APPEND USE_FLAGS "--preload-file ${file}")
     endforeach()
