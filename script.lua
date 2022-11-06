@@ -6,7 +6,7 @@ local audio = require "audio"
 
 --local worldWidth, worldHeight = renderer.getDimensions();
 
---audio.playMusic("gameMusic");
+audio.playMusic("gameMusic");
 
 local position = {x = 400, y = 300};
 local playerShip = krbsg.spawnPlayerShip("basic", position);
