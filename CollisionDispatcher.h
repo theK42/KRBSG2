@@ -9,9 +9,10 @@ namespace KEngineCore
 	class Psychopomp;
 }
 
-class EnemyShip;
-class Projectile;
-class PlayerShip;
+struct EnemyShip;
+struct Projectile;
+struct PlayerShip;
+class ScoreKeeper;
 
 class KRBSGCollisionDispatcher : public KEngine2D::CollisionDispatcher
 {
@@ -19,12 +20,12 @@ public:
 	KRBSGCollisionDispatcher();
 	virtual ~KRBSGCollisionDispatcher();
 
-	void Init(KEngineCore::Psychopomp * psychopomp);
+	void Init(KEngineCore::Psychopomp * psychopomp, ScoreKeeper * scorekeeper);
 	virtual void Deinit() override;
 
-	void AddEnemyShip(EnemyShip* ship, KEngine2D::ColliderHandle handle);
-	void AddProjectile(Projectile* shot, KEngine2D::ColliderHandle handle);
-	void AddPlayerShip(PlayerShip* ship, KEngine2D::ColliderHandle handle);
+	void AddEnemyShip(EnemyShip* ship);
+	void AddProjectile(Projectile* shot);
+	void AddPlayerShip(PlayerShip* ship);
 	void RemoveItem(int colliderHandle);
 
 	virtual void HandleCollision(KEngine2D::Collision collision) override;
@@ -42,6 +43,6 @@ private:
 	std::map<KEngine2D::ColliderHandle, Projectile*> mProjectiles;
 
 	KEngineCore::Psychopomp *	mPsychopomp{ nullptr };
-
+	ScoreKeeper*				mScoreKeeper{ nullptr };
 };
 

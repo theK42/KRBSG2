@@ -6,6 +6,7 @@
 #include "HierarchicalTransform2D.h"
 #include "MechanicalTransform2D.h"
 #include "SpriteRenderer.h"
+#include "TextRenderer.h"
 #include "Boundaries2D.h"
 #include "Collision2D.h"
 
@@ -25,6 +26,7 @@ public:
 	KEngineCore::RecyclingPool<KEngine2D::UpdatingHierarchicalTransform>& GetHierarchyPool();
 	KEngineCore::RecyclingPool<KEngine2D::UpdatingMechanicalTransform>& GetMechanicalPool();
 	KEngineCore::RecyclingPool<KEngineOpenGL::SpriteGraphic>& GetSpritePool();
+	KEngineCore::RecyclingPool<KEngineOpenGL::TextSprite>& GetTextPool();
 	KEngineCore::RecyclingPool<KEngine2D::BoundingBox>& GetBoxPool();
 	KEngineCore::RecyclingPool<KEngine2D::BoundingCircle>& GetCirclePool();
 	KEngineCore::RecyclingPool<KEngine2D::BoundingArea>& GetBoundsPool();
@@ -41,10 +43,7 @@ private:
 	KEngineCore::RecyclingPool<KEngine2D::BoundingCircle>					mCirclePool;
 	KEngineCore::RecyclingPool<KEngine2D::BoundingArea>						mBoundsPool;
 	KEngineCore::RecyclingPool<KEngine2D::Collider>							mColliderPool;
-
-
-
-
+	KEngineCore::RecyclingPool<KEngineOpenGL::TextSprite>					mTextPool;
 
 
 };

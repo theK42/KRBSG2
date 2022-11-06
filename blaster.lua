@@ -1,14 +1,36 @@
 local input = require "input"
-local weapons = require "weapons"
+local krbsg = require "krbsg"
 local audio = require "audio"
+local timer = require "timer"
 
-local blaster = weapons.wrapWeapon(...);
+local blaster = krbsg.wrapWeapon(...);
 
-fire = input.setOnButtonHold("fire", 1.0 / blaster:getCooldown(),
+local firing = false;
+
+local startFiring = input.setOnButtonDown("fire",
 	function()
-		audio.playSound("pew");
-		blaster:fire();
+		firing = true;
 	end
 );
 
-while true do coroutine.yield() end
+local stopFiring = input.setOnButtonUp("fire",
+	function()
+		firing = false;
+	end
+);
+
+function fire()
+	audio.playSound("pew");
+	local offset = {x = 0, y = 0};
+	local rotation = 0;
+	blaster:createProjectile("BlasterBolt", blaster:getDamage(), offset, rotation);
+end
+
+while true do
+	input.waitForButtonDown("fire");
+	firing = true;
+	while (firing) do
+		fire();
+		timer.waits(blaster:getCooldown());
+	end
+end

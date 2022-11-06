@@ -21,6 +21,7 @@ void PoolParty::Init()
 	mCirclePool.Init();
 	mBoundsPool.Init();
 	mColliderPool.Init();
+	mTextPool.Init();
 }
 
 void PoolParty::Deinit()
@@ -35,6 +36,7 @@ void PoolParty::Deinit()
 	mCirclePool.Deinit();
 	mBoundsPool.Deinit();
 	mColliderPool.Deinit();
+	mTextPool.Deinit();
 }
 
 KEngineCore::RecyclingPool<KEngineCore::ScheduledLuaThread>& PoolParty::GetLuaPool()
@@ -65,6 +67,11 @@ KEngineCore::RecyclingPool<KEngine2D::UpdatingMechanicalTransform>& PoolParty::G
 KEngineCore::RecyclingPool<KEngineOpenGL::SpriteGraphic>& PoolParty::GetSpritePool()
 {
 	return mSpritePool;
+}
+
+KEngineCore::RecyclingPool<KEngineOpenGL::TextSprite>& PoolParty::GetTextPool()
+{
+	return mTextPool;
 }
 
 KEngineCore::RecyclingPool<KEngine2D::BoundingBox>& PoolParty::GetBoxPool()

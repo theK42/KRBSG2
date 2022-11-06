@@ -1,9 +1,7 @@
 #include "KRBSGLuaBinding.h"
-#include "PlayerShip.h"
-#include "EnemyShip.h"
-#include "Weapon.h"
+#include "ScoreKeeper.h"
+#include "Hud.h"
 #include "PoolParty.h"
-#include "ProjectileFactory.h"
 #include "SpriteFactory.h"
 #include "CollisionDispatcher.h"
 #include "Input.h"
@@ -13,10 +11,12 @@
 #include "SpriteRenderer.h"
 #include "ShaderFactory.h"
 #include "TextureFactory.h"
+#include "FontFactory.h"
 #include "StaticTransform2D.h"
 #include "HierarchicalTransform2D.h"
 #include "MechanicalTransform2D.h"
 #include "Collision2D.h"
+#include "Tweening.h"
 #include "LuaScheduler.h"
 #include "Timer.h"
 #include "DataTree.h"
@@ -51,22 +51,30 @@ struct KRBSG2
 
 
     KEngineOpenGL::SpriteRenderer   renderer;
+    KEngineOpenGL::TextRenderer     textRenderer;
     KEngineOpenGL::ShaderFactory    shaderFactory;
     KEngineOpenGL::TextureFactory   textureFactory;
+    KEngineOpenGL::FontFactory      fontFactory;
     SpriteFactory                   spriteFactory;
     KRBSGLuaBinding                 coreLuaBinding;
     KEngineBasics::Input            input;
     KEngineBasics::AudioSystem      audio;
 
-    PlayerShipSystem                playerShipSystem;
-    EnemyShipSystem                 enemyShipSystem;
-    WeaponSystem                    weaponSystem;
-    ProjectileFactory               projectileFactory;
+    GameObjectFactory               gameObjectFactory;
+
     PoolParty                       poolParty;
+
+    ScoreKeeper                     scoreKeeper;
 
     KRBSGCollisionDispatcher        collisionDispatcher;
     KEngine2D::CollisionSystem      collisionSystem;
     KEngineCore::ScheduledLuaThread mainThread;
+
+    Hud                             hud;
+
+    KEngineCore::TweenSystem        tweening;
+    KEngine2D::TransformLibrary     transformLib;
+    KEngineOpenGL::SpriteLibrary    spriteLib;
     
 
     KEngineCore::DataTree            dataRoot;
@@ -151,25 +159,33 @@ void KRBSG2::Init()
     hierarchySystem.Init();
     mechanicsSystem.Init();
     renderer.Init(WIDTH, HEIGHT);
+    textRenderer.Init();
     shaderFactory.Init();
     textureFactory.Init();
+    fontFactory.Init(&textureFactory, &shaderFactory);
     
     spriteFactory.Init(&shaderFactory, &textureFactory, &dataRoot);
+
+    KEngineCore::DataTree* fontsData = dataRoot.GetBranch(HASH("sheetName", 0x7E99E530), HASH("Fonts", 0xB2C2C7FF));
+    fontFactory.CreateFonts(fontsData);
     
-    coreLuaBinding.Init(luaScheduler.GetMainState(), &luaScheduler, &hierarchySystem, &renderer, &spriteFactory, [this]() {loop = false; });
-    
-    ProjectileDescription blasterBlueprint{ HASH("Blaster", 0x196F6AFE) , {0.0f, -500.0f}, 2.0f };
-    collisionDispatcher.Init(&psychopomp);
+    scoreKeeper.Init(0);
+
+    collisionDispatcher.Init(&psychopomp, &scoreKeeper); 
     collisionSystem.Init(&collisionDispatcher);
     poolParty.Init();
-    projectileFactory.Init(&poolParty, &luaScheduler, &timer, &hierarchySystem, &mechanicsSystem, &renderer, &spriteFactory, &collisionSystem, &collisionDispatcher, blasterBlueprint);
-    weaponSystem.Init(&luaScheduler, &projectileFactory);
-    playerShipSystem.Init(&luaScheduler, &hierarchySystem, &renderer, &spriteFactory, &weaponSystem);
-    auto enemyShipDescription = dataRoot.GetBranch(HASH("sheetName", 0x7E99E530), HASH("Enemies", 0xB7BF73A2))->GetBranch(HASH("name", 0x5E237E06), HASH("basic", 0x90797553));
-    auto collisionData = dataRoot.GetBranch(HASH("sheetName", 0x7E99E530), HASH("CollisionShapes", 0x5EDD4EE1));
-
-    enemyShipSystem.Init(&poolParty, &luaScheduler, &hierarchySystem, &renderer, &spriteFactory, &collisionSystem, &collisionDispatcher, enemyShipDescription, collisionData);
     
+	class LuaScheduler;
+    tweening.Init(&luaScheduler);
+    transformLib.Init(&luaScheduler, &tweening);
+    spriteLib.Init(&luaScheduler, &tweening);
+    
+    gameObjectFactory.Init(&poolParty, &luaScheduler, &hierarchySystem, &mechanicsSystem, &shaderFactory, &renderer, &textRenderer, &fontFactory, &spriteFactory, &collisionSystem, &collisionDispatcher, &dataRoot);
+
+    hud.Init(&gameObjectFactory, &scoreKeeper, &fontFactory);
+
+    coreLuaBinding.Init(luaScheduler.GetMainState(), &luaScheduler, &transformLib, &spriteLib, &psychopomp, &gameObjectFactory, [this]() {loop = false; });
+
     mainThread.Init(&luaScheduler, "script.lua", true);
         
     input.AddCombinedAxis(HASH("primary", 0x1745EA86));
@@ -230,6 +246,7 @@ void KRBSG2::Update()
     hierarchySystem.Update(elapsedTimeInSeconds);
     mechanicsSystem.Update(elapsedTimeInSeconds);
     collisionSystem.Update();
+    tweening.Update(elapsedTimeInSeconds);
     psychopomp.Update();
     renderer.Render();
     SDL_GL_SwapWindow(window);
@@ -281,11 +298,12 @@ void KRBSG2::Update()
 
 void KRBSG2::Deinit()
 {
+    hud.Deinit();
     mainThread.Deinit();
-    weaponSystem.Deinit();
-    projectileFactory.Deinit();
-    enemyShipSystem.Deinit();
-    playerShipSystem.Deinit();
+    spriteLib.Deinit();
+    transformLib.Deinit();
+    tweening.Deinit();
+    gameObjectFactory.Deinit();
     renderer.Deinit();
     hierarchySystem.Deinit();
     mechanicsSystem.Deinit();

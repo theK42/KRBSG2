@@ -1,7 +1,7 @@
 local input = require "input"
-local playerShips = require "playerships"
+local krbsg = require "krbsg"
 
-local playerShip = playerShips.wrapPlayerShip(...);
+local playerShip = krbsg.wrapPlayerShip(...);
 
 move = input.setOnCombinedAxisTilt("primary", 
 	function(tilt)
@@ -11,6 +11,6 @@ move = input.setOnCombinedAxisTilt("primary",
 	end
 );
 
-playerShip:addWeapon();
+playerShip:addWeapon("Blaster");
 
 while true do coroutine.yield() end

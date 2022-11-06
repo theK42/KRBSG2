@@ -42,6 +42,7 @@ set(fragmentShaders ${fragmentShaders}
 set(textureFiles ${textureFiles}
     ship.png
     blaster.png
+    charmap-cellphone_white.png
 )
 
 set(luaScripts ${luaScripts}
@@ -49,6 +50,8 @@ set(luaScripts ${luaScripts}
     playerShip.lua
     enemyShip.lua
     blaster.lua
+    blaster_bolt.lua
+    flyoff.lua
 )
 
 set(soundFiles ${soundFiles}
@@ -89,18 +92,14 @@ CollisionDispatcher.h
 CollisionDispatcher.cpp
 SpriteFactory.h
 SpriteFactory.cpp
-PlayerShip.h
-PlayerShip.cpp
-EnemyShip.h
-EnemyShip.cpp
-Weapon.h
-Weapon.cpp
-Attack.h
-Attack.cpp
-ProjectileFactory.h
-ProjectileFactory.cpp
 PoolParty.h
 PoolParty.cpp
+GameObjectFactory.h
+GameObjectFactory.cpp
+ScoreKeeper.h
+ScoreKeeper.cpp
+Hud.h
+Hud.cpp
 ${codeLikeFiles}
 )
 
