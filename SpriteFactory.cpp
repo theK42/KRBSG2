@@ -24,7 +24,7 @@ void SpriteFactory::Init(KEngineOpenGL::ShaderFactory* shaderFactory, KEngineOpe
 	KEngineCore::DataTree* textureData = dataRoot->GetBranch(HASH("sheetName", 0x7E99E530), HASH("Textures", 0x5CF1DB40));
 	for (auto textureDescriptor : textureData->GetBranches())
 	{
-		textureFactory->CreateTexture(textureDescriptor->GetHash(HASH("name", 0x5E237E06)), textureDescriptor->GetString(HASH("filename", 0x3C0BE965)));
+		textureFactory->CreateTexture(textureDescriptor->GetHash(HASH("name", 0x5E237E06)), textureDescriptor->GetString(HASH("filename", 0x3C0BE965)), textureDescriptor->GetBool(HASH("isPixelArt", 0xB03434A0)));
 	}
 
 	KEngineCore::DataTree* shaderData = dataRoot->GetBranch(HASH("sheetName", 0x7E99E530), HASH("Shaders", 0xE1F9ADF3));
