@@ -21,8 +21,7 @@ namespace KEngineOpenGL {
 	class SpriteRenderer;
 	class SpriteLibrary;
 }
-class PlayerShip;
-class SimpleBox;
+struct PlayerShip;
 class SpriteFactory;
 
 class KRBSGLuaBinding : public KEngineCore::LuaLibrary

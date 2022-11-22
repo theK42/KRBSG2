@@ -158,7 +158,7 @@ void KRBSG2::Init()
     audio.LoadSound(HASH("pew", 0x7D5BCA3F), "laser1.wav");
     hierarchySystem.Init();
     mechanicsSystem.Init();
-    renderer.Init(WIDTH, HEIGHT);
+    renderer.Init(WIDTH, HEIGHT, 5); //TODO:  demagic this number?
     textRenderer.Init();
     shaderFactory.Init();
     textureFactory.Init();
@@ -180,7 +180,7 @@ void KRBSG2::Init()
     transformLib.Init(&luaScheduler, &tweening);
     spriteLib.Init(&luaScheduler, &tweening);
     
-    gameObjectFactory.Init(&poolParty, &luaScheduler, &hierarchySystem, &mechanicsSystem, &shaderFactory, &renderer, &textRenderer, &fontFactory, &spriteFactory, &collisionSystem, &collisionDispatcher, &dataRoot);
+    gameObjectFactory.Init(&poolParty, &luaScheduler, &timer, &hierarchySystem, &mechanicsSystem, &shaderFactory, &renderer, &textRenderer, &fontFactory, &spriteFactory, &collisionSystem, &collisionDispatcher, &dataRoot);
 
     hud.Init(&gameObjectFactory, &scoreKeeper, &fontFactory);
 

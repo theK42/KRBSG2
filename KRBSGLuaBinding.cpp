@@ -148,6 +148,16 @@ void KRBSGLuaBinding::RegisterLibrary(lua_State* luaState, char const* name)
 			return 1;
 		};
 
+		auto spawnStarfield = [](lua_State* luaState) {
+			KRBSGLuaBinding* binding = (KRBSGLuaBinding*)lua_touserdata(luaState, lua_upvalueindex(1));
+						
+			int width = (int)luaL_checkinteger(luaState, 1);
+			int height = (int)luaL_checkinteger(luaState, 2);
+			Starfield * starfield = binding->mGameObjectFactory->CreateStarfield(width, height);
+			
+			return 0;
+		};
+
 		const luaL_Reg krbsgLibrary[] = {
 			{"wrapProjectile", wrapProjectile},
 			{"wrapWeapon", wrapWeapon},
@@ -156,6 +166,7 @@ void KRBSGLuaBinding::RegisterLibrary(lua_State* luaState, char const* name)
 			{"spawnEnemyShip", spawnEnemyShip},
 			{"wrapEnemyShip", wrapEnemyShip},
 			{"wrapFlyoff", wrapFlyoff},
+			{"spawnStarfield", spawnStarfield},
 			{"log", log },
 			{"exit", exit},
 			{nullptr, nullptr}
@@ -225,7 +236,7 @@ void KRBSGLuaBinding::CreateWeaponMetaTable(lua_State* luaState)
 		
 		KEngineCore::StringHash projectileId(luaL_checkstring(luaState, 2));
 
-		int damage = luaL_checkinteger(luaState, 3);
+		int damage = (int)luaL_checkinteger(luaState, 3);
 
 		if (!lua_istable(luaState, 4)) {
 			luaL_error(luaState, "Table required for offset");

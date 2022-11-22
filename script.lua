@@ -8,6 +8,8 @@ local audio = require "audio"
 
 audio.playMusic("gameMusic");
 
+local starfiedl = krbsg.spawnStarfield(800, 600);
+
 local position = {x = 400, y = 300};
 local playerShip = krbsg.spawnPlayerShip("basic", position);
 

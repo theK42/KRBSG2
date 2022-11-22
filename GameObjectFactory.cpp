@@ -19,6 +19,8 @@ const char PlayerShip::MetaName[] = "KRBSG.PlayerShip";
 const char EnemyShip::MetaName[] = "KRBSG.EnemyShip";
 const char Flyoff::MetaName[] = "KRBSG.Flyoff";
 
+static const int MAIN_LAYER = 3;
+static const int OVERLAY_LAYER = 4;
 
 Weapon::~Weapon()
 {
@@ -123,11 +125,12 @@ GameObjectFactory::~GameObjectFactory()
 	Deinit();
 }
 
-void GameObjectFactory::Init(PoolParty* poolParty, KEngineCore::LuaScheduler* luaScheduler, KEngine2D::HierarchyUpdater* hierarchySystem, KEngine2D::MechanicsUpdater* mechanicsSystem, KEngineOpenGL::ShaderFactory* shaderFactory, KEngineOpenGL::SpriteRenderer* renderer, KEngineOpenGL::TextRenderer * textRenderer, KEngineOpenGL::FontFactory* fontFactory, SpriteFactory* spriteFactory, KEngine2D::CollisionSystem* collisionSystem, KRBSGCollisionDispatcher* collisionDispatcher, KEngineCore::DataTree* dataRoot)
+void GameObjectFactory::Init(PoolParty* poolParty, KEngineCore::LuaScheduler* luaScheduler, KEngineCore::Timer * timer, KEngine2D::HierarchyUpdater* hierarchySystem, KEngine2D::MechanicsUpdater* mechanicsSystem, KEngineOpenGL::ShaderFactory* shaderFactory, KEngineOpenGL::SpriteRenderer* renderer, KEngineOpenGL::TextRenderer * textRenderer, KEngineOpenGL::FontFactory* fontFactory, SpriteFactory* spriteFactory, KEngine2D::CollisionSystem* collisionSystem, KRBSGCollisionDispatcher* collisionDispatcher, KEngineCore::DataTree* dataRoot)
 {
 	assert(mPoolParty == nullptr);
 	mPoolParty = poolParty;
 	mLuaScheduler = luaScheduler;
+	mTimer = timer;
 	mHierarchySystem = hierarchySystem;
 	mMechanicsSystem = mechanicsSystem;
 	mShaderFactory = shaderFactory;
@@ -143,12 +146,16 @@ void GameObjectFactory::Init(PoolParty* poolParty, KEngineCore::LuaScheduler* lu
 	mPlayerShipPool.Init();
 	mEnemyShipPool.Init();
 	mFlyoffPool.Init();
+	mStarfieldPool.Init(1);
+	mStarfieldLayerPool.Init();
+	mStarfieldChunkPool.Init();
 }
 
 void GameObjectFactory::Deinit()
 {
 	mPoolParty = nullptr;
 	mLuaScheduler = nullptr;
+	mTimer = nullptr;
 	mHierarchySystem = nullptr;
 	mRenderer = nullptr;
 	mSpriteFactory = nullptr;
@@ -160,12 +167,17 @@ void GameObjectFactory::Deinit()
 	mPlayerShipPool.Clear();
 	mEnemyShipPool.Clear();
 	mFlyoffPool.Clear();
+	mStarfieldPool.Clear();
+	mStarfieldChunkPool.Clear();
 
 	mProjectilePool.Deinit();
 	mWeaponPool.Deinit();
 	mPlayerShipPool.Deinit();
 	mEnemyShipPool.Deinit();
 	mFlyoffPool.Deinit();
+	mStarfieldPool.Deinit();
+	mStarfieldLayerPool.Deinit();
+	mStarfieldChunkPool.Deinit();
 }
 
 KEngine2D::StaticTransform* GameObjectFactory::CreateStaticTransform(KEngineCore::DisposableGroup* disposables, const KEngine2D::Point& position, double rotation)
@@ -178,7 +190,7 @@ KEngine2D::StaticTransform* GameObjectFactory::CreateStaticTransform(KEngineCore
 	return selfTransform;
 }
 
-KEngineOpenGL::SpriteGraphic* GameObjectFactory::CreateSpriteGraphic(const KEngineOpenGL::Sprite* sprite, KEngineCore::DisposableGroup* disposables, KEngine2D::Transform* selfTransform)
+KEngineOpenGL::SpriteGraphic* GameObjectFactory::CreateSpriteGraphic(const KEngineOpenGL::Sprite* sprite, KEngineCore::DisposableGroup* disposables, KEngine2D::Transform* selfTransform, int layer)
 {
 	int width = sprite->width;
 	int height = sprite->height;
@@ -187,14 +199,14 @@ KEngineOpenGL::SpriteGraphic* GameObjectFactory::CreateSpriteGraphic(const KEngi
 	auto* modelTransform = mPoolParty->GetHierarchyPool().GetItem(disposables);
 	modelTransform->Init(mHierarchySystem, selfTransform, modelTransformTemp);
 	auto* graphic = mPoolParty->GetSpritePool().GetItem(disposables);
-	graphic->Init(mRenderer, sprite, modelTransform);
+	graphic->Init(mRenderer, sprite, modelTransform, layer);
 	return graphic;
 }
 
-KEngineOpenGL::SpriteGraphic * GameObjectFactory::CreateSpriteGraphic(KEngineCore::StringHash& spriteHash, KEngineCore::DisposableGroup* disposables, KEngine2D::Transform* selfTransform)
+KEngineOpenGL::SpriteGraphic * GameObjectFactory::CreateSpriteGraphic(KEngineCore::StringHash& spriteHash, KEngineCore::DisposableGroup* disposables, KEngine2D::Transform* selfTransform, int layer)
 {
 	const auto* sprite = mSpriteFactory->GetSprite(spriteHash);
-	return CreateSpriteGraphic(sprite, disposables, selfTransform);
+	return CreateSpriteGraphic(sprite, disposables, selfTransform, layer);
 }
 
 
@@ -295,7 +307,7 @@ PlayerShip* GameObjectFactory::CreatePlayerShip(KEngine2D::Point position, KEngi
 	auto shipDescriptions = mDataRoot->GetBranch(HASH("sheetName", 0x7E99E530), HASH("PlayerShips", 0x9F959BCA));
 	auto shipDescription = shipDescriptions->GetBranch(HASH("name", 0x5E237E06), shipId);
 	auto spriteHash = shipDescription->GetHash(HASH("sprite", 0x351D8F9E));
-	auto graphic = CreateSpriteGraphic(spriteHash, &playerShip->mDisposables, playerShip->mSelfTransform);
+	auto graphic = CreateSpriteGraphic(spriteHash, &playerShip->mDisposables, playerShip->mSelfTransform, MAIN_LAYER);
 
 	auto collisionShapeName = shipDescription->GetHash(HASH("collider", 0xCA3D45D7));
 	playerShip->mColliderHandle = CreateCollider(&playerShip->mDisposables, playerShip->mSelfTransform, collisionShapeName, PlayerShipFlag, 0);
@@ -339,7 +351,7 @@ EnemyShip* GameObjectFactory::CreateEnemyShip(KEngine2D::Point position, KEngine
 	auto shipDescription = shipDescriptions->GetBranch(HASH("name", 0x5E237E06), shipId);
 	auto spriteHash = shipDescription->GetHash(HASH("sprite", 0x351D8F9E));
 
-	CreateSpriteGraphic(spriteHash, disposables, enemyShip->mSelfTransform);
+	CreateSpriteGraphic(spriteHash, disposables, enemyShip->mSelfTransform, MAIN_LAYER);
 
 	auto scriptName = shipDescription->GetString(HASH("script", 0x1C81873A));
 	void* scriptObj = enemyShip;
@@ -379,7 +391,7 @@ Projectile* GameObjectFactory::CreateProjectile(const KEngine2D::Transform & ori
 	auto projectileDescription = projectileDescriptions->GetBranch(HASH("name", 0x5E237E06), projectileDefId);
 	auto spriteHash = projectileDescription->GetHash(HASH("sprite", 0x351D8F9E));
 
-	CreateSpriteGraphic(spriteHash, &projectile->mDisposables, mover);
+	CreateSpriteGraphic(spriteHash, &projectile->mDisposables, mover, MAIN_LAYER);
 
 	auto collisionShapeName = projectileDescription->GetHash(HASH("collider", 0xCA3D45D7));
 	unsigned int flags = PlayerProjectileFlag;
@@ -412,7 +424,7 @@ Flyoff* GameObjectFactory::CreateFlyoff(KEngine2D::Point origin, std::string_vie
 	auto fontHash = flyoffStyle->GetHash(HASH("font", 0xD09408D2));
 	auto shaderHash = flyoffStyle->GetHash(HASH("shader", 0xFFF39E28));
 	auto textSprite = CreateTextSprite(&flyoff->mDisposables, text, fontHash, shaderHash, flyoff->mSelfTransform);
-	flyoff->mSprite = CreateSpriteGraphic(&textSprite->GetSprite(), &flyoff->mDisposables, flyoff->mSelfTransform);
+	flyoff->mSprite = CreateSpriteGraphic(&textSprite->GetSprite(), &flyoff->mDisposables, flyoff->mSelfTransform, OVERLAY_LAYER);
 
 	CreateScriptThread(&flyoff->mDisposables, flyoffStyle->GetString(HASH("script", 0x1C81873A)), flyoff);
 	return flyoff;
@@ -424,4 +436,130 @@ void GameObjectFactory::ReleaseFlyoff(Flyoff* flyoff)
 	mFlyoffPool.ReleaseItem(flyoff);
 }
 
+StarfieldChunk* GameObjectFactory::CreateStarfieldChunk(KEngineCore::DataTree * starfieldLayerDefinition, int y, int width, int height, int layer)
+{
+	auto starfieldChunk = mStarfieldChunkPool.GetItem();
 
+	KEngine2D::StaticTransform startPosition;
+	startPosition.Init();
+	startPosition.SetTranslation({ 0, (double)y });
+
+	auto mover = mPoolParty->GetMechanicalPool().GetItem(&starfieldChunk->mDisposables);
+	mover->Init(mMechanicsSystem, startPosition, { 0, starfieldLayerDefinition->GetFloat(HASH("speed", 0x0F26FEF6)) });
+
+	int starCount = starfieldLayerDefinition->GetInt(HASH("density", 0xC0A86AFA));
+	float alpha = starfieldLayerDefinition->GetFloat(HASH("alpha", 0xD0E0396A));
+	
+	KEngineCore::DataTree* starsData = starfieldLayerDefinition->GetBranch(HASH("branchName", 0xD7728FA9), HASH("stars", 0x011DC02C));
+
+
+	int starDiversity = starsData->GetNumHashes();
+	std::uniform_int_distribution<int> horizontalDist(0, width);	
+	std::uniform_int_distribution<int> verticalDist(0, height);
+	std::uniform_int_distribution<int> starDist(1, starDiversity - 1); //Lists of Hashes unfortunately have to start at 1
+
+	for (int i = 0; i < starCount; i++)
+	{
+		int starIndex = starDist(mRandomEngine);
+		double localX = horizontalDist(mRandomEngine);
+		double localY = verticalDist(mRandomEngine);
+
+		KEngine2D::StaticTransform starTransTemp;
+		starTransTemp.Init();
+		starTransTemp.SetTranslation({ localX, localY });
+
+		auto* starTrans = mPoolParty->GetHierarchyPool().GetItem(&starfieldChunk->mDisposables);
+		starTrans->Init(mHierarchySystem, mover, starTransTemp);
+
+		auto spriteHash = starsData->GetHash(starIndex);
+		auto graphic = CreateSpriteGraphic(spriteHash, &starfieldChunk->mDisposables, starTrans, layer);
+		graphic->SetAlpha(alpha);
+	}
+	return starfieldChunk;
+}
+
+void GameObjectFactory::ReleaseStarfieldChunk(StarfieldChunk* chunk)
+{
+	chunk->mDisposables.Deinit();
+	mStarfieldChunkPool.ReleaseItem(chunk);
+}
+
+StarfieldLayer* GameObjectFactory::CreateStarfieldLayer(KEngineCore::DisposableGroup * disposables, KEngineCore::DataTree* starfieldLayerDefinition, int width, int height, int layer)
+{
+	auto starfieldLayer = mStarfieldLayerPool.GetItem(disposables);
+	starfieldLayer->Init();
+	starfieldLayer->mFactory = this;
+	starfieldLayer->mStarfieldLayerDescription = starfieldLayerDefinition;
+	starfieldLayer->mWidth = width;
+	starfieldLayer->mHeight = height;
+	starfieldLayer->mLayer = layer;
+	starfieldLayer->mChunks.push_back(CreateStarfieldChunk(starfieldLayerDefinition, height, width, height, layer));
+	starfieldLayer->mChunks.push_back(CreateStarfieldChunk(starfieldLayerDefinition, 0, width, height, layer));
+	starfieldLayer->mChunks.push_back(CreateStarfieldChunk(starfieldLayerDefinition, -height, width, height, layer));
+	float speed = starfieldLayerDefinition->GetFloat(HASH("speed", 0x0F26FEF6));
+	KEngineCore::Timeout* timeout = mPoolParty->GetTimePool().GetItem(&starfieldLayer->mDisposables);
+	timeout->Init(mTimer, height / speed, true, [starfieldLayer]()
+	{
+		starfieldLayer->mFactory->ReleaseStarfieldChunk(starfieldLayer->mChunks.front());
+		starfieldLayer->mChunks.pop_front();
+		starfieldLayer->mChunks.push_back(starfieldLayer->mFactory->CreateStarfieldChunk(starfieldLayer->mStarfieldLayerDescription, -starfieldLayer->mHeight, starfieldLayer->mWidth, starfieldLayer->mHeight, starfieldLayer->mLayer));
+	});
+	return starfieldLayer;
+}
+
+Starfield* GameObjectFactory::CreateStarfield(int width, int height)
+{
+	KEngineCore::DataTree* starfieldDefinition = mDataRoot->GetBranch(HASH("sheetName", 0x7E99E530), HASH("Starfield", 0x7330AFA9));
+	auto starfield = mStarfieldPool.GetItem();
+	int layerCount = starfieldDefinition->GetNumBranches();
+	for (int i = 0; i < layerCount; i++)
+	{
+		CreateStarfieldLayer(&starfield->mDisposables, starfieldDefinition->GetBranch(i), width, height, i);
+	}
+	return starfield;
+}
+
+StarfieldChunk::~StarfieldChunk()
+{
+	Deinit();
+}
+
+void StarfieldChunk::Init()
+{
+	mDisposables.Init();
+}
+
+void StarfieldChunk::Deinit()
+{
+	mDisposables.Deinit();
+}
+
+StarfieldLayer::~StarfieldLayer()
+{
+	Deinit();
+}
+
+void StarfieldLayer::Init()
+{
+	mDisposables.Init();
+}
+
+void StarfieldLayer::Deinit()
+{
+	mDisposables.Deinit();
+}
+
+Starfield::~Starfield()
+{
+	Deinit();
+}
+
+void Starfield::Init()
+{
+	mDisposables.Init();
+}
+
+void Starfield::Deinit()
+{
+	mDisposables.Deinit();
+}

@@ -43,6 +43,16 @@ set(textureFiles ${textureFiles}
     ship.png
     blaster.png
     charmap-cellphone_white.png
+    galaxy.png
+    galaxy3.png
+    nebula.png
+    star1.png
+    star2.png
+    star3.png
+    star4.png
+    star5.png
+    star6.png
+    star7.png
 )
 
 set(luaScripts ${luaScripts}

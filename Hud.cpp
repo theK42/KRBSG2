@@ -27,7 +27,7 @@ void Hud::Init(GameObjectFactory* factory, ScoreKeeper* scoreKeeper, KEngineOpen
 	KEngine2D::StaticTransform* transform = mFactory->CreateStaticTransform(&mDisposables, { 600, 100 });
 
 	mScoreField = mFactory->CreateTextSprite(&mDisposables, "0000000", HASH("cellphone", 0xAAA18E60), HASH("Textured", 0xDF225E87), transform);
-	mFactory->CreateSpriteGraphic(&mScoreField->GetSprite(), &mDisposables, transform);
+	mFactory->CreateSpriteGraphic(&mScoreField->GetSprite(), &mDisposables, transform, 4); //TODO:  READ THIS FROM SOMEWHERE
 
 	mScoreKeeper->SetScoreChangeHandler([this](int score, KEngine2D::Point location) {
 		std::string s1 = std::to_string(score);
