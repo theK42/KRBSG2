@@ -3,6 +3,7 @@
 #include "Hud.h"
 #include "PoolParty.h"
 #include "SpriteFactory.h"
+#include "UIViewFactory.h"
 #include "CollisionDispatcher.h"
 #include "Input.h"
 #include "Audio.h"
@@ -55,6 +56,8 @@ struct KRBSG2
     KEngineOpenGL::ShaderFactory    shaderFactory;
     KEngineOpenGL::TextureFactory   textureFactory;
     KEngineOpenGL::FontFactory      fontFactory;
+
+    KEngineBasics::UIViewFactory    uiFactory;
     SpriteFactory                   spriteFactory;
     KRBSGLuaBinding                 coreLuaBinding;
     KEngineBasics::Input            input;
@@ -179,10 +182,10 @@ void KRBSG2::Init()
     tweening.Init(&luaScheduler);
     transformLib.Init(&luaScheduler, &tweening);
     spriteLib.Init(&luaScheduler, &tweening);
-    
+    uiFactory.Init(&shaderFactory, &fontFactory, &renderer, &textRenderer, &hierarchySystem, 4);
     gameObjectFactory.Init(&poolParty, &luaScheduler, &timer, &hierarchySystem, &mechanicsSystem, &shaderFactory, &renderer, &textRenderer, &fontFactory, &spriteFactory, &collisionSystem, &collisionDispatcher, &dataRoot);
 
-    hud.Init(&gameObjectFactory, &scoreKeeper, &fontFactory);
+    hud.Init(&gameObjectFactory, &scoreKeeper, &fontFactory, WIDTH, HEIGHT, &uiFactory);
 
     coreLuaBinding.Init(luaScheduler.GetMainState(), &luaScheduler, &transformLib, &spriteLib, &psychopomp, &gameObjectFactory, [this]() {loop = false; });
 

@@ -4,9 +4,12 @@
 #include "TextRenderer.h"
 #include "StaticTransform2D.h"
 #include "FontFactory.h"
+#include "UIView.h"
+#include "UITextView.h"
 #include <assert.h>
 
 #include <iostream>
+#include "UIViewFactory.h"
 
 Hud::Hud()
 {
@@ -17,25 +20,34 @@ Hud::~Hud()
 	Deinit();
 }
 
-void Hud::Init(GameObjectFactory* factory, ScoreKeeper* scoreKeeper, KEngineOpenGL::FontFactory* fontFactory)
+void Hud::Init(GameObjectFactory* factory, ScoreKeeper* scoreKeeper, KEngineOpenGL::FontFactory* fontFactory, int width, int height, KEngineBasics::UIViewFactory* uiFactory)
 {
 	assert(mFactory == nullptr);
 	mDisposables.Init();
 	mFactory = factory;
 	mFontFactory = fontFactory;
 	mScoreKeeper = scoreKeeper;
-	KEngine2D::StaticTransform* transform = mFactory->CreateStaticTransform(&mDisposables, { 600, 100 });
+	
+	auto* fullScreenRight = uiFactory->CreateStaticLayoutGuide(&mDisposables, 800);
+	auto* fullScreenBottom = uiFactory->CreateStaticLayoutGuide(&mDisposables, 600);
+	auto* fullScreenOrigin = uiFactory->CreateStaticLayoutGuide(&mDisposables, 0);
+	
+	KEngineBasics::UIView* hudView = uiFactory->CreateUIView(&mDisposables, nullptr, fullScreenOrigin, fullScreenOrigin, fullScreenRight, fullScreenBottom);
+	
+	auto* topMargin = uiFactory->CreateParentRelativeLayoutGuide(&mDisposables, KEngineBasics::Height, 0.0, 20);
+	auto* rightMargin = uiFactory->CreateParentRelativeLayoutGuide(&mDisposables, KEngineBasics::Width, 1.0, -20);
+	auto* bottomContent = uiFactory->CreateContentRelativeLayoutGuide(&mDisposables, topMargin, KEngineBasics::Height, 1, 0);
+	auto* leftContent = uiFactory->CreateContentRelativeLayoutGuide(&mDisposables, rightMargin, KEngineBasics::Width, -1.0, 0);
 
-	mScoreField = mFactory->CreateTextSprite(&mDisposables, "0000000", HASH("cellphone", 0xAAA18E60), HASH("Textured", 0xDF225E87), transform);
-	mFactory->CreateSpriteGraphic(&mScoreField->GetSprite(), &mDisposables, transform, 4); //TODO:  READ THIS FROM SOMEWHERE
+	mScoreTextView = uiFactory->CreateUITextView(&mDisposables, hudView, leftContent, topMargin, rightMargin, bottomContent, HASH("cellphone", 0xAAA18E60), HASH("Textured", 0xDF225E87), "0");
+
 
 	mScoreKeeper->SetScoreChangeHandler([this](int score, KEngine2D::Point location) {
 		std::string s1 = std::to_string(score);
 		auto flyoff = mFactory->CreateFlyoff(location, s1, HASH("scoreFlyoff", 0xC5BF99CD));
 		std::string s2 = std::to_string(mScoreKeeper->GetScore());
-		const KEngineOpenGL::FixWidthBitmapFont& font = mFontFactory->GetFont(HASH("cellphone", 0xAAA18E60 ));
-		mScoreField->RenderText(s2, font);
-		});
+		mScoreTextView->SetText(s2);
+	});
 }
 
 void Hud::Deinit()
@@ -47,5 +59,5 @@ void Hud::Deinit()
 	}
 	mFactory = nullptr;
 	mScoreKeeper = nullptr;
-	mScoreField = nullptr;
+	mScoreTextView = nullptr;
 }
