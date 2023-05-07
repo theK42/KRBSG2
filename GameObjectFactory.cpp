@@ -9,6 +9,7 @@
 #include "HierarchicalTransform2D.h"
 #include "MechanicalTransform2D.h"
 #include "SpriteRenderer.h"
+#include "LuaContext.h"
 #include "DataTree.h"
 #include <numbers>
 
@@ -259,15 +260,18 @@ KEngine2D::ColliderHandle GameObjectFactory::CreateCollider(KEngineCore::Disposa
 	return collider->GetHandle();
 }
 
-KEngineCore::ScheduledLuaThread* GameObjectFactory::CreateScriptThread(KEngineCore::DisposableGroup* disposables, const std::string_view& scriptName, void* scriptObj)
+KEngineCore::ScheduledLuaThread* GameObjectFactory::CreateScriptThread(KEngineCore::DisposableGroup* disposables, KEngineCore::LuaContext * parentContext, const std::string_view& scriptName, void* scriptObj, const char* objName)
 {
+	auto* context = mPoolParty->GetContextPool().GetItem(disposables);
+	context->Init(mLuaScheduler, parentContext);
+
+	context->AddContextualObject(objName, scriptObj);
+
 	auto* scriptThread = mPoolParty->GetLuaPool().GetItem(disposables);
-	scriptThread->Init(mLuaScheduler, scriptName);
-	lua_State* scriptState = scriptThread->GetThreadState();
-	lua_checkstack(scriptState, 1);
-	lua_pushlightuserdata(scriptState, scriptObj);
-	scriptThread->Resume(1);
-	return scriptThread;
+	
+	context->RunScript(scriptName, scriptThread);
+	
+	return scriptThread; //Might not need this?  Or make more sense to return the context?  
 }
 
 KEngineOpenGL::TextSprite* GameObjectFactory::CreateTextSprite(KEngineCore::DisposableGroup* disposables, std::string_view text, KEngineCore::StringHash fontId, KEngineCore::StringHash shaderId, KEngine2D::Transform* transform)
@@ -281,7 +285,7 @@ KEngineOpenGL::TextSprite* GameObjectFactory::CreateTextSprite(KEngineCore::Disp
 	return textSprite;
 }
 
-Weapon* GameObjectFactory::CreateWeapon(KEngineCore::DisposableGroup* disposables, const KEngine2D::Transform* transform, KEngineCore::StringHash weaponId)
+Weapon* GameObjectFactory::CreateWeapon(KEngineCore::DisposableGroup* disposables, const KEngine2D::Transform* transform, KEngineCore::StringHash weaponId, KEngineCore::LuaContext* parentContext)
 {
 	Weapon* weapon = mWeaponPool.GetItem(disposables);
 	auto weaponDescriptions = mDataRoot->GetBranch(HASH("sheetName", 0x7E99E530), HASH("Weapons", 0x9DB3827D));
@@ -293,11 +297,11 @@ Weapon* GameObjectFactory::CreateWeapon(KEngineCore::DisposableGroup* disposable
 	weapon->mFactory = this;
 
 	auto scriptName = weaponDescription->GetString(HASH("script", 0x1C81873A));
-	auto script = CreateScriptThread(disposables, scriptName, weapon);
+	auto script = CreateScriptThread(disposables, parentContext, scriptName, weapon, Weapon::MetaName);
 	return weapon;
 }
 
-PlayerShip* GameObjectFactory::CreatePlayerShip(KEngine2D::Point position, KEngineCore::StringHash shipId)
+PlayerShip* GameObjectFactory::CreatePlayerShip(KEngine2D::Point position, KEngineCore::StringHash shipId, KEngineCore::LuaContext* parentContext)
 {
 	PlayerShip* playerShip = mPlayerShipPool.GetItem();
 	playerShip->Init();
@@ -322,7 +326,7 @@ PlayerShip* GameObjectFactory::CreatePlayerShip(KEngine2D::Point position, KEngi
 	weaponAttachTransform->Init(mHierarchySystem, playerShip->mSelfTransform, weaponTransform);
 	playerShip->mWeaponAttach = weaponAttachTransform;
 
-	CreateScriptThread(&playerShip->mDisposables, "playerShip.lua", playerShip);
+	CreateScriptThread(&playerShip->mDisposables, parentContext, "playerShip.lua", playerShip, PlayerShip::MetaName);
 
 	return playerShip;
 }
@@ -334,7 +338,7 @@ void GameObjectFactory::ReleasePlayerShip(PlayerShip* ship)
 	mPlayerShipPool.ReleaseItem(ship);
 }
 
-EnemyShip* GameObjectFactory::CreateEnemyShip(KEngine2D::Point position, KEngineCore::StringHash shipId)
+EnemyShip* GameObjectFactory::CreateEnemyShip(KEngine2D::Point position, KEngineCore::StringHash shipId, KEngineCore::LuaContext * parentContext)
 {
 	EnemyShip* enemyShip = mEnemyShipPool.GetItem();
 	enemyShip->Init();
@@ -355,9 +359,8 @@ EnemyShip* GameObjectFactory::CreateEnemyShip(KEngine2D::Point position, KEngine
 
 	auto scriptName = shipDescription->GetString(HASH("script", 0x1C81873A));
 	void* scriptObj = enemyShip;
-
-	CreateScriptThread(disposables, scriptName, scriptObj);
-
+	
+	CreateScriptThread(disposables, parentContext, scriptName, scriptObj, EnemyShip::MetaName);
 
 	auto collisionShapeName = shipDescription->GetHash(HASH("collider", 0xCA3D45D7));
 	unsigned int flags = EnemyShipFlag;
@@ -376,7 +379,7 @@ void GameObjectFactory::ReleaseEnemyShip(EnemyShip* ship)
 	mEnemyShipPool.ReleaseItem(ship);
 }
 
-Projectile* GameObjectFactory::CreateProjectile(const KEngine2D::Transform & origin, KEngineCore::StringHash projectileDefId)
+Projectile* GameObjectFactory::CreateProjectile(const KEngine2D::Transform & origin, KEngineCore::StringHash projectileDefId, KEngineCore::LuaContext* parentContext)
 {
 	Projectile* projectile = mProjectilePool.GetItem();
 	projectile->Init();
@@ -399,7 +402,7 @@ Projectile* GameObjectFactory::CreateProjectile(const KEngine2D::Transform & ori
 	projectile->mColliderHandle = CreateCollider(&projectile->mDisposables, mover, collisionShapeName, flags, filters);
 	mCollisionDispatcher->AddProjectile(projectile);
 
-	CreateScriptThread(&projectile->mDisposables, projectileDescription->GetString(HASH("script", 0x1C81873A)), projectile);
+	CreateScriptThread(&projectile->mDisposables, parentContext, projectileDescription->GetString(HASH("script", 0x1C81873A)), projectile, Projectile::MetaName);
 	return projectile;
 }
 
@@ -410,7 +413,7 @@ void GameObjectFactory::ReleaseProjectile(Projectile* projectile)
 	mProjectilePool.ReleaseItem(projectile);
 }
 
-Flyoff* GameObjectFactory::CreateFlyoff(KEngine2D::Point origin, std::string_view text, KEngineCore::StringHash flyoffStyleId)
+Flyoff* GameObjectFactory::CreateFlyoff(KEngine2D::Point origin, std::string_view text, KEngineCore::StringHash flyoffStyleId, KEngineCore::LuaContext* parentContext)
 {
 	Flyoff* flyoff = mFlyoffPool.GetItem();
 	flyoff->Init();
@@ -426,7 +429,7 @@ Flyoff* GameObjectFactory::CreateFlyoff(KEngine2D::Point origin, std::string_vie
 	auto textSprite = CreateTextSprite(&flyoff->mDisposables, text, fontHash, shaderHash, flyoff->mSelfTransform);
 	flyoff->mSprite = CreateSpriteGraphic(&textSprite->GetSprite(), &flyoff->mDisposables, flyoff->mSelfTransform, OVERLAY_LAYER);
 
-	CreateScriptThread(&flyoff->mDisposables, flyoffStyle->GetString(HASH("script", 0x1C81873A)), flyoff);
+	CreateScriptThread(&flyoff->mDisposables, parentContext, flyoffStyle->GetString(HASH("script", 0x1C81873A)), flyoff, Flyoff::MetaName);
 	return flyoff;
 }
 

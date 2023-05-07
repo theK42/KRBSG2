@@ -5,7 +5,9 @@
 #include "MechanicalTransform2D.h"
 #include "SpriteRenderer.h"
 #include "Psychopomp.h"
-
+#include "GameplaySession.h"
+#include "KRBSG2.h"
+#include "LuaContext.h"
 #include "Lua.hpp"
 
 #include <assert.h> 
@@ -23,15 +25,15 @@ KRBSGLuaBinding::~KRBSGLuaBinding(void)
 }
 
 
-void KRBSGLuaBinding::Init(lua_State* luaState, KEngineCore::LuaScheduler * luaScheduler, KEngine2D::TransformLibrary* transformLib, KEngineOpenGL::SpriteLibrary* spriteLib, KEngineCore::Psychopomp* psychopomp, GameObjectFactory * gameObjectFactory, std::function<void()> exitFunc) {
+void KRBSGLuaBinding::Init(lua_State* luaState, KEngineCore::LuaScheduler * luaScheduler, KEngine2D::TransformLibrary* transformLib, KEngineOpenGL::SpriteLibrary* spriteLib, KEngineCore::Psychopomp* psychopomp, KRBSG2* app, std::function<void()> exitFunc) {
 	assert(mLuaState == nullptr);
 	mLuaState = luaState;
 	mLuaScheduler = luaScheduler;
 	mTransformLib = transformLib;
 	mSpriteLib = spriteLib;
 	mPsychopomp = psychopomp;
-	mGameObjectFactory = gameObjectFactory;
 	mExitFunc = exitFunc;
+	mApp = app;
 	RegisterLibrary(luaState);
 	
 }
@@ -48,7 +50,12 @@ void KRBSGLuaBinding::Deinit() {
 		lua_pop(mLuaState, 2);*/ 
 		mLuaState = nullptr;
 		mLuaScheduler = nullptr;
-		mGameObjectFactory = nullptr;
+		if (mGameplaySession)
+		{
+			delete mGameplaySession;
+			mGameplaySession = nullptr;
+		}
+		mApp = nullptr;
 	}
 }
 
@@ -62,12 +69,72 @@ void KRBSGLuaBinding::RegisterLibrary(lua_State* luaState, char const* name)
 
 	auto luaopen_krbsg = [](lua_State* luaState) {
 
-		auto exit = [](lua_State* luaState) -> int {
-			KRBSGLuaBinding* self = (KRBSGLuaBinding*)lua_touserdata(luaState, lua_upvalueindex(1));
-			self->RequestExit();
+		auto createGameSession = [](lua_State* luaState) -> int {
+			KRBSGLuaBinding* binding = (KRBSGLuaBinding*)lua_touserdata(luaState, lua_upvalueindex(1));
+			KEngineCore::LuaContext* scriptParent = KEngineCore::LuaContext::GetFromState(luaState, 4);
+			const char* scriptName = luaL_checkstring(luaState, 1);
+			int width = (int)luaL_checkinteger(luaState, 2);
+			int height = (int)luaL_checkinteger(luaState, 3);
+			binding->mGameplaySession = new GameplaySession();
+			binding->mGameplaySession->Init(scriptParent, &binding->mApp->timer, &binding->mApp->input, &binding->mApp->luaScheduler, &binding->mApp->psychopomp, &binding->mApp->hierarchySystem, &binding->mApp->shaderFactory, &binding->mApp->renderer, &binding->mApp->textRenderer, &binding->mApp->fontFactory, &binding->mApp->spriteFactory, &binding->mApp->dataRoot, &binding->mApp->poolParty, &binding->mApp->uiFactory, scriptName, width, height);
+			
 			return 0;
 		};
 
+		auto waitForGameOver = [](lua_State* luaState) -> int {
+			KRBSGLuaBinding* binding = (KRBSGLuaBinding*)lua_touserdata(luaState, lua_upvalueindex(1));
+			KEngineCore::LuaContext* scriptParent = KEngineCore::LuaContext::GetFromState(luaState, 1);
+						
+			GameoverCallback* callback = new (lua_newuserdata(luaState, sizeof(GameoverCallback))) GameoverCallback;
+			luaL_getmetatable(luaState, GameoverCallback::MetaName);
+			lua_setmetatable(luaState, -2);
+
+			KEngineCore::LuaScheduler* scheduler = &binding->mApp->luaScheduler;
+
+			KEngineCore::ScheduledLuaThread* scheduledThread = scheduler->GetScheduledThread(luaState);
+			scheduledThread->Pause();
+
+			callback->Init(binding->mGameplaySession, [scheduledThread]() {
+				scheduledThread->ClearCleanupCallback();
+				scheduledThread->Resume();
+			});
+
+			scheduledThread->SetCleanupCallback([binding]() {
+				binding->Deinit();
+			});
+
+			return lua_yield(luaState, 1);  //Pretend we're going to pass the timeout to resume so it doesn't get GC'd
+		};
+
+		auto destroyGameSession = [](lua_State* luaState) -> int {
+			KRBSGLuaBinding* binding = (KRBSGLuaBinding*)lua_touserdata(luaState, lua_upvalueindex(1));
+			if (binding->mGameplaySession != nullptr)
+			delete binding->mGameplaySession;
+			binding->mGameplaySession = nullptr;
+			return 0;
+		};
+
+
+		auto exit = [](lua_State* luaState) -> int {
+			KRBSGLuaBinding* binding = (KRBSGLuaBinding*)lua_touserdata(luaState, lua_upvalueindex(1));
+			binding->RequestExit();
+			return 0;
+		};
+
+		auto pause = [](lua_State* luaState) -> int {
+			KRBSGLuaBinding* binding = (KRBSGLuaBinding*)lua_touserdata(luaState, lua_upvalueindex(1));
+			assert(binding->mGameplaySession);
+			binding->mGameplaySession->Pause();
+			return 0;
+		};	
+		
+		auto resume = [](lua_State* luaState) -> int {
+			KRBSGLuaBinding* binding = (KRBSGLuaBinding*)lua_touserdata(luaState, lua_upvalueindex(1));
+			assert(binding->mGameplaySession);
+			binding->mGameplaySession->Resume();
+			return 0;
+		};	
+		
 		auto log = [](lua_State* luaState) {
 			printf(luaL_checkstring(luaState, 1));
 			printf("\n");
@@ -89,6 +156,7 @@ void KRBSGLuaBinding::RegisterLibrary(lua_State* luaState, char const* name)
 		auto spawnPlayerShip = [](lua_State* luaState) {
 			KRBSGLuaBinding* binding = (KRBSGLuaBinding*)lua_touserdata(luaState, lua_upvalueindex(1));
 
+			assert(binding->mGameplaySession);
 			KEngineCore::StringHash shipId(luaL_checkstring(luaState, 1));
 
 			if (!lua_istable(luaState, 2)) {
@@ -104,7 +172,9 @@ void KRBSGLuaBinding::RegisterLibrary(lua_State* luaState, char const* name)
 
 			KEngine2D::Point position = { x, y };
 
-			PlayerShip* playerShip = binding->mGameObjectFactory->CreatePlayerShip(position, shipId);
+			KEngineCore::LuaContext* scriptParent = KEngineCore::LuaContext::GetFromState(luaState, 3);
+
+			PlayerShip* playerShip = binding->mGameplaySession->GetGameObjectFactory()->CreatePlayerShip(position, shipId, scriptParent);
 			return 0;
 		};
 
@@ -117,6 +187,7 @@ void KRBSGLuaBinding::RegisterLibrary(lua_State* luaState, char const* name)
 		auto spawnEnemyShip = [](lua_State* luaState) {
 			KRBSGLuaBinding* binding = (KRBSGLuaBinding*)lua_touserdata(luaState, lua_upvalueindex(1));
 
+			assert(binding->mGameplaySession);
 			KEngineCore::StringHash shipId(luaL_checkstring(luaState, 1));
 
 			if (!lua_istable(luaState, 2)) {
@@ -130,9 +201,11 @@ void KRBSGLuaBinding::RegisterLibrary(lua_State* luaState, char const* name)
 			double y = luaL_checknumber(luaState, -1);
 			lua_pop(luaState, 1);
 
+			KEngineCore::LuaContext* scriptParent = KEngineCore::LuaContext::GetFromState(luaState, 3);
+
 			KEngine2D::Point position = { x, y };
 
-			EnemyShip* enemyShip = binding->mGameObjectFactory->CreateEnemyShip(position, shipId);
+			EnemyShip* enemyShip = binding->mGameplaySession->GetGameObjectFactory()->CreateEnemyShip(position, shipId, scriptParent);
 			return 0;
 		};
 
@@ -150,15 +223,19 @@ void KRBSGLuaBinding::RegisterLibrary(lua_State* luaState, char const* name)
 
 		auto spawnStarfield = [](lua_State* luaState) {
 			KRBSGLuaBinding* binding = (KRBSGLuaBinding*)lua_touserdata(luaState, lua_upvalueindex(1));
-						
+
+			assert(binding->mGameplaySession);
 			int width = (int)luaL_checkinteger(luaState, 1);
 			int height = (int)luaL_checkinteger(luaState, 2);
-			Starfield * starfield = binding->mGameObjectFactory->CreateStarfield(width, height);
+			Starfield * starfield = binding->mGameplaySession->GetGameObjectFactory()->CreateStarfield(width, height);
 			
 			return 0;
 		};
 
 		const luaL_Reg krbsgLibrary[] = {
+			{"createGameSession", createGameSession},
+			{"destroyGameSession", destroyGameSession},
+			{"waitForGameOver", waitForGameOver},
 			{"wrapProjectile", wrapProjectile},
 			{"wrapWeapon", wrapWeapon},
 			{"spawnPlayerShip", spawnPlayerShip},
@@ -168,6 +245,8 @@ void KRBSGLuaBinding::RegisterLibrary(lua_State* luaState, char const* name)
 			{"wrapFlyoff", wrapFlyoff},
 			{"spawnStarfield", spawnStarfield},
 			{"log", log },
+			{"pause", pause},
+			{"resume", resume},
 			{"exit", exit},
 			{nullptr, nullptr}
 		};
@@ -256,7 +335,10 @@ void KRBSGLuaBinding::CreateWeaponMetaTable(lua_State* luaState)
 		origin.SetTranslation(weapon->mTransform->LocalToGlobal({ x, y }));
 		origin.SetRotation(rotation + weapon->mTransform->GetRotation());
 
-		weapon->mFactory->CreateProjectile(origin, projectileId);
+		KEngineCore::LuaContext* scriptParent = KEngineCore::LuaContext::GetFromState(luaState, 6);
+
+
+		weapon->mFactory->CreateProjectile(origin, projectileId, scriptParent);
 		return 0;
 	};
 
@@ -403,11 +485,14 @@ void KRBSGLuaBinding::CreatePlayerShipMetaTable(lua_State* luaState)
 
 	auto addWeapon = [](lua_State* luaState) -> int {
 		KRBSGLuaBinding* binding = (KRBSGLuaBinding*)lua_touserdata(luaState, lua_upvalueindex(1));
+		assert(binding->mGameplaySession);
 		PlayerShip* ship = binding->mPlayerShipWrapping.Unwrap(luaState, 1);
 
 		KEngineCore::StringHash weaponId(luaL_checkstring(luaState, 2));
 
-		Weapon * weapon = binding->mGameObjectFactory->CreateWeapon(&ship->mDisposables, ship->mWeaponAttach, weaponId); 
+		KEngineCore::LuaContext* scriptParent = KEngineCore::LuaContext::GetFromState(luaState, 3);
+
+		Weapon * weapon = binding->mGameplaySession->GetGameObjectFactory()->CreateWeapon(&ship->mDisposables, ship->mWeaponAttach, weaponId, scriptParent); 
 	
 		return 0;
 	};

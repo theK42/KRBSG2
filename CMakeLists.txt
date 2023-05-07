@@ -56,7 +56,8 @@ set(textureFiles ${textureFiles}
 )
 
 set(luaScripts ${luaScripts}
-    script.lua
+    krbsg2.lua
+    game.lua
     playerShip.lua
     enemyShip.lua
     blaster.lua
@@ -94,12 +95,15 @@ set(allFiles
 
 
 add_executable(KRBSG2 
+KRBSG2.h
 KRBSG2.cpp
 KRBSG2Constants.h
 KRBSGLuaBinding.h
 KRBSGLuaBinding.cpp
 CollisionDispatcher.h
 CollisionDispatcher.cpp
+GameplaySession.h
+GameplaySession.cpp
 SpriteFactory.h
 SpriteFactory.cpp
 PoolParty.h

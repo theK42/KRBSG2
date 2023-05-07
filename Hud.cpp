@@ -20,13 +20,14 @@ Hud::~Hud()
 	Deinit();
 }
 
-void Hud::Init(GameObjectFactory* factory, ScoreKeeper* scoreKeeper, KEngineOpenGL::FontFactory* fontFactory, int width, int height, KEngineBasics::UIViewFactory* uiFactory)
+void Hud::Init(GameObjectFactory* factory, ScoreKeeper* scoreKeeper, KEngineOpenGL::FontFactory* fontFactory, int width, int height, KEngineBasics::UIViewFactory* uiFactory, KEngineCore::LuaContext * parentContext)
 {
 	assert(mFactory == nullptr);
 	mDisposables.Init();
 	mFactory = factory;
 	mFontFactory = fontFactory;
 	mScoreKeeper = scoreKeeper;
+	mParentContext = parentContext;
 	
 	auto* fullScreenRight = uiFactory->CreateStaticLayoutGuide(&mDisposables, 800);
 	auto* fullScreenBottom = uiFactory->CreateStaticLayoutGuide(&mDisposables, 600);
@@ -44,7 +45,7 @@ void Hud::Init(GameObjectFactory* factory, ScoreKeeper* scoreKeeper, KEngineOpen
 
 	mScoreKeeper->SetScoreChangeHandler([this](int score, KEngine2D::Point location) {
 		std::string s1 = std::to_string(score);
-		auto flyoff = mFactory->CreateFlyoff(location, s1, HASH("scoreFlyoff", 0xC5BF99CD));
+		auto flyoff = mFactory->CreateFlyoff(location, s1, HASH("scoreFlyoff", 0xC5BF99CD), mParentContext);
 		std::string s2 = std::to_string(mScoreKeeper->GetScore());
 		mScoreTextView->SetText(s2);
 	});

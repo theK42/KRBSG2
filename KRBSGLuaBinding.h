@@ -21,15 +21,17 @@ namespace KEngineOpenGL {
 	class SpriteRenderer;
 	class SpriteLibrary;
 }
+struct KRBSG2;
 struct PlayerShip;
 class SpriteFactory;
+class GameplaySession;
 
 class KRBSGLuaBinding : public KEngineCore::LuaLibrary
 {
 public:
 	KRBSGLuaBinding(void);
 	~KRBSGLuaBinding(void);
-	void Init(lua_State* luaState, KEngineCore::LuaScheduler * luaScheduler, KEngine2D::TransformLibrary* transformLib, KEngineOpenGL::SpriteLibrary * spriteLib, KEngineCore::Psychopomp * psychopomp, GameObjectFactory * gameObjectFactory, std::function<void()> exitFunc);
+	void Init(lua_State* luaState, KEngineCore::LuaScheduler * luaScheduler, KEngine2D::TransformLibrary* transformLib, KEngineOpenGL::SpriteLibrary * spriteLib, KEngineCore::Psychopomp * psychopomp, KRBSG2 * app, std::function<void()> exitFunc);
 	void Deinit();
 
 	void RegisterLibrary(lua_State* luaState, char const* name = "krbsg");
@@ -44,8 +46,9 @@ private:
 	static void CreateEnemyShipMetaTable(lua_State* luaState);
 	static void CreateFlyoffMetaTable(lua_State* luaState);
 
+	GameplaySession*			mGameplaySession;
 
-	GameObjectFactory*			mGameObjectFactory;
+	KRBSG2*						mApp {nullptr};
 	KEngineCore::LuaScheduler *	mLuaScheduler;
 	KEngineCore::Psychopomp*	mPsychopomp;
 

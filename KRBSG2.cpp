@@ -1,27 +1,8 @@
-#include "KRBSGLuaBinding.h"
-#include "ScoreKeeper.h"
-#include "Hud.h"
-#include "PoolParty.h"
-#include "SpriteFactory.h"
-#include "UIViewFactory.h"
-#include "CollisionDispatcher.h"
-#include "Input.h"
-#include "Audio.h"
+#include "KRBSG2.h"
 #include "OpenGLUtils.h"
 #undef max
-#include "SpriteRenderer.h"
-#include "ShaderFactory.h"
-#include "TextureFactory.h"
-#include "FontFactory.h"
-#include "StaticTransform2D.h"
-#include "HierarchicalTransform2D.h"
-#include "MechanicalTransform2D.h"
-#include "Collision2D.h"
-#include "Tweening.h"
-#include "LuaScheduler.h"
-#include "Timer.h"
-#include "DataTree.h"
-#include "Psychopomp.h"
+
+
 #include <iostream>
 #include <limits>
 #include <stdio.h>
@@ -39,56 +20,6 @@
 /* Sets constants */
 #define WIDTH 800
 #define HEIGHT 600
-
-
-struct KRBSG2
-{
-    SDL_Window* window = NULL;
-    KEngineCore::Psychopomp         psychopomp;
-    KEngineCore::LuaScheduler       luaScheduler;
-    KEngineCore::Timer              timer;
-    KEngine2D::HierarchyUpdater     hierarchySystem;
-    KEngine2D::MechanicsUpdater     mechanicsSystem;
-
-
-    KEngineOpenGL::SpriteRenderer   renderer;
-    KEngineOpenGL::TextRenderer     textRenderer;
-    KEngineOpenGL::ShaderFactory    shaderFactory;
-    KEngineOpenGL::TextureFactory   textureFactory;
-    KEngineOpenGL::FontFactory      fontFactory;
-
-    KEngineBasics::UIViewFactory    uiFactory;
-    SpriteFactory                   spriteFactory;
-    KRBSGLuaBinding                 coreLuaBinding;
-    KEngineBasics::Input            input;
-    KEngineBasics::AudioSystem      audio;
-
-    GameObjectFactory               gameObjectFactory;
-
-    PoolParty                       poolParty;
-
-    ScoreKeeper                     scoreKeeper;
-
-    KRBSGCollisionDispatcher        collisionDispatcher;
-    KEngine2D::CollisionSystem      collisionSystem;
-    KEngineCore::ScheduledLuaThread mainThread;
-
-    Hud                             hud;
-
-    KEngineCore::TweenSystem        tweening;
-    KEngine2D::TransformLibrary     transformLib;
-    KEngineOpenGL::SpriteLibrary    spriteLib;
-    
-
-    KEngineCore::DataTree            dataRoot;
-    bool                             loop;
-    Uint32                           previousTime;
-    
-    void Init();
-    void Update();
-    void Deinit();
-};
-
 
 void KRBSG2::Init()
 {
@@ -154,13 +85,20 @@ void KRBSG2::Init()
 
     psychopomp.Init();
     luaScheduler.Init();
+    
+    scriptRunner.Init(&luaScheduler, nullptr);
+
+    timeLib.Init(luaScheduler.GetMainState());
+    inputLib.Init(luaScheduler.GetMainState());
+
     timer.Init(&luaScheduler);
+    scriptRunner.AddContextualObject(timeLib.GetName(), &timer); //Add the timer to the script runner context
     input.Init(&luaScheduler, &timer);
+    scriptRunner.AddContextualObject(inputLib.GetName(), &input); //Add the input system to the script runner context
     audio.Init(&luaScheduler);
     audio.LoadMusic(HASH("gameMusic", 0xBAA31179), "magic_space.mp3");
     audio.LoadSound(HASH("pew", 0x7D5BCA3F), "laser1.wav");
     hierarchySystem.Init();
-    mechanicsSystem.Init();
     renderer.Init(WIDTH, HEIGHT, 5); //TODO:  demagic this number?
     textRenderer.Init();
     shaderFactory.Init();
@@ -172,10 +110,6 @@ void KRBSG2::Init()
     KEngineCore::DataTree* fontsData = dataRoot.GetBranch(HASH("sheetName", 0x7E99E530), HASH("Fonts", 0xB2C2C7FF));
     fontFactory.CreateFonts(fontsData);
     
-    scoreKeeper.Init(0);
-
-    collisionDispatcher.Init(&psychopomp, &scoreKeeper); 
-    collisionSystem.Init(&collisionDispatcher);
     poolParty.Init();
     
 	class LuaScheduler;
@@ -183,43 +117,19 @@ void KRBSG2::Init()
     transformLib.Init(&luaScheduler, &tweening);
     spriteLib.Init(&luaScheduler, &tweening);
     uiFactory.Init(&shaderFactory, &fontFactory, &renderer, &textRenderer, &hierarchySystem, 4);
-    gameObjectFactory.Init(&poolParty, &luaScheduler, &timer, &hierarchySystem, &mechanicsSystem, &shaderFactory, &renderer, &textRenderer, &fontFactory, &spriteFactory, &collisionSystem, &collisionDispatcher, &dataRoot);
 
-    hud.Init(&gameObjectFactory, &scoreKeeper, &fontFactory, WIDTH, HEIGHT, &uiFactory);
+    coreLuaBinding.Init(luaScheduler.GetMainState(), &luaScheduler, &transformLib, &spriteLib, &psychopomp, this, [this]() {loop = false; });
 
-    coreLuaBinding.Init(luaScheduler.GetMainState(), &luaScheduler, &transformLib, &spriteLib, &psychopomp, &gameObjectFactory, [this]() {loop = false; });
 
-    mainThread.Init(&luaScheduler, "script.lua", true);
-        
-    input.AddCombinedAxis(HASH("primary", 0x1745EA86));
 
-    input.AddChildAxis(HASH("primary", 0x1745EA86), HASH("primary.horizontal", 0x520B651B), KEngineBasics::AxisType::Horizontal, KEngineBasics::ControllerType::Joystick, 0);
-    input.AddChildAxis(HASH("primary", 0x1745EA86), HASH("primary.vertical", 0x6ED1CEFB), KEngineBasics::AxisType::Vertical, KEngineBasics::ControllerType::Joystick, 1);
-
-    input.AddChildAxis(HASH("primary", 0x1745EA86), HASH("primary.horizontal", 0x520B651B), KEngineBasics::AxisType::Horizontal, KEngineBasics::ControllerType::Gamepad, SDL_CONTROLLER_AXIS_LEFTX);
-    input.AddChildAxis(HASH("primary", 0x1745EA86), HASH("primary.vertical", 0x6ED1CEFB), KEngineBasics::AxisType::Vertical, KEngineBasics::ControllerType::Gamepad, SDL_CONTROLLER_AXIS_LEFTY);
-
-    input.AddAxisButton(HASH("primary.horizontal", 0x520B651B), HASH("primary.left", 0x174671DF), KEngineBasics::AxisType::Horizontal, -1, KEngineBasics::ControllerType::Gamepad, SDL_CONTROLLER_BUTTON_DPAD_LEFT);
-    input.AddAxisButton(HASH("primary.horizontal", 0x520B651B), HASH("primary.right", 0xE1A272AD), KEngineBasics::AxisType::Horizontal, 1, KEngineBasics::ControllerType::Gamepad, SDL_CONTROLLER_BUTTON_DPAD_RIGHT);
-    input.AddAxisButton(HASH("primary.vertical", 0x6ED1CEFB), HASH("primary.down", 0x71DE068C), KEngineBasics::AxisType::Vertical, -1, KEngineBasics::ControllerType::Gamepad, SDL_CONTROLLER_BUTTON_DPAD_UP);
-    input.AddAxisButton(HASH("primary.vertical", 0x6ED1CEFB), HASH("primary.up", 0x8840872B), KEngineBasics::AxisType::Vertical, 1, KEngineBasics::ControllerType::Gamepad, SDL_CONTROLLER_BUTTON_DPAD_DOWN);
-
-    input.AddAxisButton(HASH("primary.horizontal", 0x520B651B), HASH("primary.left", 0x174671DF), KEngineBasics::AxisType::Horizontal, -1, KEngineBasics::ControllerType::Keyboard, SDL_SCANCODE_A);
-    input.AddAxisButton(HASH("primary.horizontal", 0x520B651B), HASH("primary.right", 0xE1A272AD), KEngineBasics::AxisType::Horizontal, 1, KEngineBasics::ControllerType::Keyboard, SDL_SCANCODE_D);
-    input.AddAxisButton(HASH("primary.vertical", 0x6ED1CEFB), HASH("primary.down", 0x71DE068C), KEngineBasics::AxisType::Vertical, -1, KEngineBasics::ControllerType::Keyboard, SDL_SCANCODE_W);
-    input.AddAxisButton(HASH("primary.vertical", 0x6ED1CEFB), HASH("primary.up", 0x8840872B), KEngineBasics::AxisType::Vertical, 1, KEngineBasics::ControllerType::Keyboard, SDL_SCANCODE_S);
-
-    input.AddAxisButton(HASH("primary.horizontal", 0x520B651B), HASH("primary.left", 0x174671DF), KEngineBasics::AxisType::Horizontal, -1, KEngineBasics::ControllerType::Keyboard, SDL_SCANCODE_LEFT);
-    input.AddAxisButton(HASH("primary.horizontal", 0x520B651B), HASH("primary.right", 0xE1A272AD), KEngineBasics::AxisType::Horizontal, 1, KEngineBasics::ControllerType::Keyboard, SDL_SCANCODE_RIGHT);
-    input.AddAxisButton(HASH("primary.vertical", 0x6ED1CEFB), HASH("primary.down", 0x71DE068C), KEngineBasics::AxisType::Vertical, -1, KEngineBasics::ControllerType::Keyboard, SDL_SCANCODE_UP);
-    input.AddAxisButton(HASH("primary.vertical", 0x6ED1CEFB), HASH("primary.up", 0x8840872B), KEngineBasics::AxisType::Vertical, 1, KEngineBasics::ControllerType::Keyboard, SDL_SCANCODE_DOWN);
-
-    input.AddButton(HASH("fire", 0x58DE09CF), KEngineBasics::ControllerType::Joystick, 0);
-    input.AddButton(HASH("fire", 0x58DE09CF), KEngineBasics::ControllerType::Gamepad, SDL_CONTROLLER_BUTTON_A);
-    input.AddButton(HASH("fire", 0x58DE09CF), KEngineBasics::ControllerType::Keyboard, SDL_SCANCODE_SPACE);
+//    mainThread.Init(&luaContext, "script.lua", true);
 
     input.AddButton(HASH("pause", 0xD79A92ED), KEngineBasics::ControllerType::Gamepad, SDL_CONTROLLER_BUTTON_START);
     input.AddButton(HASH("pause", 0xD79A92ED), KEngineBasics::ControllerType::Keyboard, SDL_SCANCODE_ESCAPE);
+
+    input.AddButton(HASH("any", 0x64F3F7B4), KEngineBasics::ControllerType::Keyboard, -1);
+    input.AddButton(HASH("any", 0x64F3F7B4), KEngineBasics::ControllerType::Gamepad, -1);
+    input.AddButton(HASH("any", 0x64F3F7B4), KEngineBasics::ControllerType::Joystick, -1);
 
     SDL_GameController* controller = NULL;
     for (int i = 0; i < SDL_NumJoysticks(); ++i) {
@@ -235,6 +145,8 @@ void KRBSG2::Init()
         }
     }
     previousTime = SDL_GetTicks();
+
+    scriptRunner.RunScript("krbsg2.lua", &mainThread);
 }
 
 void KRBSG2::Update()
@@ -247,8 +159,6 @@ void KRBSG2::Update()
     timer.Update(elapsedTimeInSeconds);
     luaScheduler.Update();
     hierarchySystem.Update(elapsedTimeInSeconds);
-    mechanicsSystem.Update(elapsedTimeInSeconds);
-    collisionSystem.Update();
     tweening.Update(elapsedTimeInSeconds);
     psychopomp.Update();
     renderer.Render();
@@ -301,16 +211,13 @@ void KRBSG2::Update()
 
 void KRBSG2::Deinit()
 {
-    hud.Deinit();
-    mainThread.Deinit();
+    scriptRunner.Deinit();
+    coreLuaBinding.Deinit();
     spriteLib.Deinit();
     transformLib.Deinit();
     tweening.Deinit();
-    gameObjectFactory.Deinit();
     renderer.Deinit();
     hierarchySystem.Deinit();
-    mechanicsSystem.Deinit();
-    coreLuaBinding.Deinit();
     luaScheduler.Deinit();
     audio.Deinit();
     input.Deinit();

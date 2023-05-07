@@ -1,11 +1,10 @@
-local timer = require "timer"
+local time = require "time"
 local krbsg = require "krbsg"
 
 local bolt = krbsg.wrapProjectile(...);
 
-
 bolt:setForwardVelocity(500);
 
---timer.waits(5); --lifetime
+--time.wait(5, ...); --lifetime
 
 --bolt:despawn();

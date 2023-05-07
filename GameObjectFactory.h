@@ -8,6 +8,7 @@
 
 namespace KEngineCore
 {
+	class LuaContext;
 	class Timer;
 	class DataTree;
 }
@@ -154,20 +155,20 @@ public:
 	KEngineOpenGL::SpriteGraphic* CreateSpriteGraphic(const KEngineOpenGL::Sprite* sprite, KEngineCore::DisposableGroup* disposables, KEngine2D::Transform* selfTransform, int layer);
 	KEngineOpenGL::SpriteGraphic* CreateSpriteGraphic(KEngineCore::StringHash& spriteHash, KEngineCore::DisposableGroup* disposables, KEngine2D::Transform* selfTransform, int layer);
 	KEngine2D::ColliderHandle CreateCollider(KEngineCore::DisposableGroup* disposables, KEngine2D::Transform* transform, KEngineCore::StringHash& collisionShapeName, unsigned int flags, unsigned int filters);
-	KEngineCore::ScheduledLuaThread* CreateScriptThread(KEngineCore::DisposableGroup* disposables, const std::string_view& scriptName, void* scriptObj);
+	KEngineCore::ScheduledLuaThread* CreateScriptThread(KEngineCore::DisposableGroup* disposables, KEngineCore::LuaContext * parentContext, const std::string_view& scriptName, void* scriptObj, const char * objName);
 
-	Weapon* CreateWeapon(KEngineCore::DisposableGroup* disposables, const KEngine2D::Transform* transform, KEngineCore::StringHash weaponId);
+	Weapon* CreateWeapon(KEngineCore::DisposableGroup* disposables, const KEngine2D::Transform* transform, KEngineCore::StringHash weaponId, KEngineCore::LuaContext* parentContext);
 
-	PlayerShip* CreatePlayerShip(KEngine2D::Point position, KEngineCore::StringHash shipId);
+	PlayerShip* CreatePlayerShip(KEngine2D::Point position, KEngineCore::StringHash shipId, KEngineCore::LuaContext* parentContext);
 	void ReleasePlayerShip(PlayerShip* ship);
 
-	EnemyShip* CreateEnemyShip(KEngine2D::Point position, KEngineCore::StringHash shipId);
+	EnemyShip* CreateEnemyShip(KEngine2D::Point position, KEngineCore::StringHash shipId, KEngineCore::LuaContext* parentContext);
 	void ReleaseEnemyShip(EnemyShip* ship);
 
-	Projectile* CreateProjectile(const KEngine2D::Transform& origin, KEngineCore::StringHash projectileDefId);
+	Projectile* CreateProjectile(const KEngine2D::Transform& origin, KEngineCore::StringHash projectileDefId, KEngineCore::LuaContext* parentContext);
 	void ReleaseProjectile(Projectile* projectile);
 
-	Flyoff* CreateFlyoff(KEngine2D::Point origin, std::string_view text, KEngineCore::StringHash flyoffStyleId);
+	Flyoff* CreateFlyoff(KEngine2D::Point origin, std::string_view text, KEngineCore::StringHash flyoffStyleId, KEngineCore::LuaContext* parentContext);
 	void ReleaseFlyoff(Flyoff* flyoff);
 
 	StarfieldChunk* CreateStarfieldChunk(KEngineCore::DataTree* starfieldLayerDefinition, int y, int width, int height, int layer);

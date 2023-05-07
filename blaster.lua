@@ -1,7 +1,8 @@
 local input = require "input"
 local krbsg = require "krbsg"
 local audio = require "audio"
-local timer = require "timer"
+local time = require "time"
+
 
 local blaster = krbsg.wrapWeapon(...);
 
@@ -10,27 +11,27 @@ local firing = false;
 local startFiring = input.setOnButtonDown("fire",
 	function()
 		firing = true;
-	end
-);
+	end,
+...);
 
 local stopFiring = input.setOnButtonUp("fire",
 	function()
 		firing = false;
-	end
-);
+	end,
+...);
 
-function fire()
+function fire(...)
 	audio.playSound("pew");
 	local offset = {x = 0, y = 0};
 	local rotation = 0;
-	blaster:createProjectile("BlasterBolt", blaster:getDamage(), offset, rotation);
+	blaster:createProjectile("BlasterBolt", blaster:getDamage(), offset, rotation, ...);
 end
 
 while true do
-	input.waitForButtonDown("fire");
+	input.waitForButtonDown("fire", ...);
 	firing = true;
-	while (firing) do
-		fire();
-		timer.waits(blaster:getCooldown());
+	while (firing) do	
+		fire(...);
+		time.wait(blaster:getCooldown(), ...);
 	end
 end

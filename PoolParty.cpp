@@ -12,6 +12,9 @@ PoolParty::~PoolParty()
 void PoolParty::Init()
 {
 	mLuaThreadPool.Init();
+	mContextPool.Init();
+	mContinuousTimePool.Init();
+	mInputForwardingPool.Init();
 	mTimePool.Init();
 	mStaticTransformPool.Init();
 	mHierarchicalTransformPool.Init();
@@ -26,7 +29,10 @@ void PoolParty::Init()
 
 void PoolParty::Deinit()
 {
-	mLuaThreadPool.Deinit();	
+	mLuaThreadPool.Deinit();
+	mContextPool.Deinit();
+	mContinuousTimePool.Deinit();
+	mInputForwardingPool.Deinit();
 	mTimePool.Deinit();
 	mStaticTransformPool.Deinit();
 	mHierarchicalTransformPool.Deinit();
@@ -44,9 +50,24 @@ KEngineCore::RecyclingPool<KEngineCore::ScheduledLuaThread>& PoolParty::GetLuaPo
 	return mLuaThreadPool;
 }
 
+KEngineCore::RecyclingPool<KEngineCore::LuaContext>& PoolParty::GetContextPool()
+{
+	return mContextPool;
+}
+
 KEngineCore::RecyclingPool<KEngineCore::Timeout>& PoolParty::GetTimePool()
 {
 	return mTimePool;
+}
+
+KEngineCore::RecyclingPool<KEngineCore::TimeForwarder>& PoolParty::GetContinuousTimePool()
+{
+	return mContinuousTimePool;
+}
+
+KEngineCore::RecyclingPool<KEngineBasics::InputForwarder>& PoolParty::GetInputForwardingPool()
+{
+	return mInputForwardingPool;
 }
 
 KEngineCore::RecyclingPool<KEngine2D::StaticTransform>& PoolParty::GetStaticPool()

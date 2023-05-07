@@ -8,9 +8,9 @@ move = input.setOnCombinedAxisTilt("primary",
 		tilt.x = tilt.x * 2;
 		tilt.y = tilt.y * 2;
 		playerShip:move(tilt);
-	end
-);
+	end,
+...);
 
-playerShip:addWeapon("Blaster");
+playerShip:addWeapon("Blaster", ...);
 
 while true do coroutine.yield() end

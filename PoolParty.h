@@ -9,7 +9,8 @@
 #include "TextRenderer.h"
 #include "Boundaries2D.h"
 #include "Collision2D.h"
-
+#include "LuaContext.h"
+#include "Input.h"
 
 class PoolParty
 {
@@ -21,7 +22,10 @@ public:
 	void Deinit();
 
 	KEngineCore::RecyclingPool<KEngineCore::ScheduledLuaThread>& GetLuaPool();
+	KEngineCore::RecyclingPool<KEngineCore::LuaContext>& GetContextPool();
 	KEngineCore::RecyclingPool<KEngineCore::Timeout>& GetTimePool();
+	KEngineCore::RecyclingPool<KEngineCore::TimeForwarder>& GetContinuousTimePool();
+	KEngineCore::RecyclingPool<KEngineBasics::InputForwarder>& GetInputForwardingPool();
 	KEngineCore::RecyclingPool<KEngine2D::StaticTransform>& GetStaticPool();
 	KEngineCore::RecyclingPool<KEngine2D::UpdatingHierarchicalTransform>& GetHierarchyPool();
 	KEngineCore::RecyclingPool<KEngine2D::UpdatingMechanicalTransform>& GetMechanicalPool();
@@ -34,7 +38,10 @@ public:
 
 private:
 	KEngineCore::RecyclingPool<KEngineCore::ScheduledLuaThread>				mLuaThreadPool;
+	KEngineCore::RecyclingPool<KEngineCore::LuaContext>						mContextPool;
 	KEngineCore::RecyclingPool<KEngineCore::Timeout>						mTimePool;
+	KEngineCore::RecyclingPool<KEngineCore::TimeForwarder>					mContinuousTimePool;
+	KEngineCore::RecyclingPool<KEngineBasics::InputForwarder>				mInputForwardingPool;
 	KEngineCore::RecyclingPool<KEngine2D::StaticTransform>					mStaticTransformPool;
 	KEngineCore::RecyclingPool<KEngine2D::UpdatingHierarchicalTransform>	mHierarchicalTransformPool;
 	KEngineCore::RecyclingPool<KEngine2D::UpdatingMechanicalTransform>		mMechanicalTransformPool;
