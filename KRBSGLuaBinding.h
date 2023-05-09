@@ -25,6 +25,7 @@ struct KRBSG2;
 struct PlayerShip;
 class SpriteFactory;
 class GameplaySession;
+class PauseMenu;
 
 class KRBSGLuaBinding : public KEngineCore::LuaLibrary
 {
@@ -46,7 +47,8 @@ private:
 	static void CreateEnemyShipMetaTable(lua_State* luaState);
 	static void CreateFlyoffMetaTable(lua_State* luaState);
 
-	GameplaySession*			mGameplaySession;
+	GameplaySession*	mGameplaySession;
+	PauseMenu*			mPauseMenu;
 
 	KRBSG2*						mApp {nullptr};
 	KEngineCore::LuaScheduler *	mLuaScheduler;

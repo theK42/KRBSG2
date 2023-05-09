@@ -9,6 +9,7 @@
 #include "KRBSG2.h"
 #include "LuaContext.h"
 #include "Lua.hpp"
+#include "PauseMenu.h"
 
 #include <assert.h> 
 
@@ -108,8 +109,9 @@ void KRBSGLuaBinding::RegisterLibrary(lua_State* luaState, char const* name)
 
 		auto destroyGameSession = [](lua_State* luaState) -> int {
 			KRBSGLuaBinding* binding = (KRBSGLuaBinding*)lua_touserdata(luaState, lua_upvalueindex(1));
-			if (binding->mGameplaySession != nullptr)
-			delete binding->mGameplaySession;
+			if (binding->mGameplaySession != nullptr) {
+				delete binding->mGameplaySession;
+			}
 			binding->mGameplaySession = nullptr;
 			return 0;
 		};
@@ -133,8 +135,27 @@ void KRBSGLuaBinding::RegisterLibrary(lua_State* luaState, char const* name)
 			assert(binding->mGameplaySession);
 			binding->mGameplaySession->Resume();
 			return 0;
-		};	
+		};			
 		
+		auto createPauseMenu = [](lua_State* luaState) -> int {
+			KRBSGLuaBinding* binding = (KRBSGLuaBinding*)lua_touserdata(luaState, lua_upvalueindex(1));
+			KEngineCore::LuaContext* scriptParent = KEngineCore::LuaContext::GetFromState(luaState, 1);
+			binding->mPauseMenu = new PauseMenu();
+			binding->mPauseMenu->Init(&binding->mApp->fontFactory, 800, 600, &binding->mApp->uiFactory, scriptParent);
+			return 0;
+		};
+
+		auto destroyPauseMenu = [](lua_State* luaState) -> int {
+			KRBSGLuaBinding* binding = (KRBSGLuaBinding*)lua_touserdata(luaState, lua_upvalueindex(1));
+			if (binding->mPauseMenu != nullptr) {
+				delete binding->mPauseMenu;
+			}
+			binding->mPauseMenu = nullptr;
+			return 0;
+		};
+
+
+				
 		auto log = [](lua_State* luaState) {
 			printf(luaL_checkstring(luaState, 1));
 			printf("\n");
@@ -247,6 +268,8 @@ void KRBSGLuaBinding::RegisterLibrary(lua_State* luaState, char const* name)
 			{"log", log },
 			{"pause", pause},
 			{"resume", resume},
+			{"createPauseMenu", createPauseMenu},
+			{"destroyPauseMenu", destroyPauseMenu},
 			{"exit", exit},
 			{nullptr, nullptr}
 		};

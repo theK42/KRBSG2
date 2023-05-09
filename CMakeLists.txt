@@ -106,6 +106,8 @@ GameplaySession.h
 GameplaySession.cpp
 SpriteFactory.h
 SpriteFactory.cpp
+PauseMenu.h
+PauseMenu.cpp
 PoolParty.h
 PoolParty.cpp
 GameObjectFactory.h

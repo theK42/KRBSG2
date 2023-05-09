@@ -8,6 +8,8 @@ print("welcome to krbsg2");
 local width = 800; -- TODO read as parameter?  Change entirely?
 local height = 600;
 
+local context = ...;
+
 while (true) do
 	--attract mode kinda works but isn't really ready for prime time.
 	--[[
@@ -30,23 +32,25 @@ while (true) do
 
 	]]--
 
-	krbsg.createGameSession("game.lua", width, height, ...);
+	krbsg.createGameSession("game.lua", width, height, context);
 		
 	local paused = false;
 	local pause = input.setOnButtonDown("pause", 
 		function()
 			if not paused then
-				krbsg.pause();
+				krbsg.pause(context);
+				krbsg.createPauseMenu(context);
 				paused = true;
 			else
-			krbsg.resume();
+				krbsg.resume(context);
+				krbsg.destroyPauseMenu(context);
 				paused = false;
 			end
 		end,
-	...);
+	context);
 
-	krbsg.waitForGameOver(...);
+	krbsg.waitForGameOver(context);
 
-	krbsg.destroyGameplaySession(...);
+	krbsg.destroyGameplaySession(context);
 
 end
