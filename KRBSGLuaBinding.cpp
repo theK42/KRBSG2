@@ -51,6 +51,11 @@ void KRBSGLuaBinding::Deinit() {
 		lua_pop(mLuaState, 2);*/ 
 		mLuaState = nullptr;
 		mLuaScheduler = nullptr;
+		if (mPauseMenu)
+		{
+			delete mPauseMenu;
+			mPauseMenu = nullptr;
+		}
 		if (mGameplaySession)
 		{
 			delete mGameplaySession;
