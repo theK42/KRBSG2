@@ -202,6 +202,17 @@ void KRBSG2::Update()
         case SDL_JOYDEVICEADDED:
             SDL_JoystickOpen(event.jdevice.which);
             break;
+        case SDL_MOUSEMOTION:
+            input.HandleCursorPosition(KEngineBasics::ControllerType::Mouse, { (double)event.motion.x, (double)event.motion.y });
+            break;
+        case SDL_MOUSEBUTTONDOWN:
+            input.HandleCursorPosition(KEngineBasics::ControllerType::Mouse, { (double)event.button.x, (double)event.button.y });
+            input.HandleButtonDown(KEngineBasics::ControllerType::Mouse, event.button.button);
+            break;
+        case SDL_MOUSEBUTTONUP:
+            input.HandleCursorPosition(KEngineBasics::ControllerType::Mouse, { (double)event.button.x, (double)event.button.y });
+            input.HandleButtonUp(KEngineBasics::ControllerType::Mouse, event.button.button);
+            break;
         case SDL_QUIT:
             loop = false;
             break;

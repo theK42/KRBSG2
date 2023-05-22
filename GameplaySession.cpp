@@ -49,11 +49,17 @@ void GameplaySession::Init(KEngineCore::LuaContext* scriptParent, KEngineCore::T
 	mInput.AddAxisButton(HASH("primary.vertical", 0x6ED1CEFB), HASH("primary.down", 0x71DE068C), KEngineBasics::AxisType::Vertical, -1, KEngineBasics::ControllerType::Keyboard, SDL_SCANCODE_UP);
 	mInput.AddAxisButton(HASH("primary.vertical", 0x6ED1CEFB), HASH("primary.up", 0x8840872B), KEngineBasics::AxisType::Vertical, 1, KEngineBasics::ControllerType::Keyboard, SDL_SCANCODE_DOWN);
 
+	mInput.AddCursor(HASH("cursor", 0xC57F6A8E), KEngineBasics::ControllerType::Mouse);
+
+	mInput.AddButton(HASH("cursor.primary", 0xB101C609), KEngineBasics::ControllerType::Mouse, 1);
+
+	mInput.AddVirtualAxis(HASH("primary.horizontal", 0x520B651B), HASH("cursor", 0xC57F6A8E), KEngineBasics::AxisType::Horizontal, HASH("cursor.primary", 0xB101C609), 1.0f/80.0f);
+	mInput.AddVirtualAxis(HASH("primary.vertical", 0x6ED1CEFB), HASH("cursor", 0xC57F6A8E), KEngineBasics::AxisType::Vertical, HASH("cursor.primary", 0xB101C609), 1.0f / 80.0f);
+
 	mInput.AddButton(HASH("fire", 0x58DE09CF), KEngineBasics::ControllerType::Joystick, 0);
 	mInput.AddButton(HASH("fire", 0x58DE09CF), KEngineBasics::ControllerType::Gamepad, SDL_CONTROLLER_BUTTON_A);
 	mInput.AddButton(HASH("fire", 0x58DE09CF), KEngineBasics::ControllerType::Keyboard, SDL_SCANCODE_SPACE);
-
-
+	//mInput.AddButton(HASH("fire", 0x58DE09CF), KEngineBasics::ControllerType::Mouse, 0);
 
 	mScriptRunner.AddContextualObject("time", &mTimer);
 	mScriptRunner.AddContextualObject("input", &mInput);
@@ -86,6 +92,10 @@ void GameplaySession::Init(KEngineCore::LuaContext* scriptParent, KEngineCore::T
 		[this](KEngineBasics::ControllerType type, int id)
 		{
 			mInput.HandleButtonUp(type, id);
+		},
+		[this](KEngineBasics::ControllerType type, const KEngine2D::Point& position)
+		{
+			mInput.HandleCursorPosition(type, position);
 		}
 	);
 
