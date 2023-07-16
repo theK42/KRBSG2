@@ -42,7 +42,7 @@ public:
     GameplaySession();
     ~GameplaySession();
 
-    void Init(KEngineCore::LuaContext* scriptParent, KEngineCore::Timer* rootTimer, KEngineBasics::Input * rootInput, KEngineCore::LuaScheduler* luaScheduler, KEngineCore::Psychopomp* psychopomp, KEngine2D::HierarchyUpdater* hierarchySystem, KEngineBasics::ShaderFactory* shaderFactory, KEngineBasics::SpriteRenderer* renderer, KEngineBasics::TextRenderer* textRenderer, KEngineBasics::FontFactory* fontFactory, SpriteFactory* spriteFactory, KEngineCore::DataTree* dataRoot, PoolParty* poolParty, KEngineBasics::UIViewFactory * uiFactory, const char* scriptName, int width, int height);
+    void Init(KEngineCore::LuaContext* scriptParent, KEngineCore::Timer* rootTimer, KEngineBasics::Input * rootInput, KEngineCore::LuaScheduler* luaScheduler, KEngineCore::Psychopomp* psychopomp, KEngine2D::HierarchyUpdater* hierarchySystem, KEngineGraphics::ShaderFactory* shaderFactory, KEngineGraphics::SpriteRenderer* renderer, KEngineGraphics::TextRenderer* textRenderer, KEngineGraphics::FontFactory* fontFactory, SpriteFactory* spriteFactory, KEngineCore::DataTree* dataRoot, PoolParty* poolParty, KEngineBasics::UIViewFactory * uiFactory, const char* scriptName, int width, int height);
     void Deinit();
 
     GameObjectFactory* GetGameObjectFactory();

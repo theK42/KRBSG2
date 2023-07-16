@@ -26,6 +26,23 @@
         "generator": "Unix Makefiles",
         "toolchainFile": "/opt/homebrew/Cellar/emscripten/3.1.23/libexec/cmake/Modules/Platform/Emscripten.cmake",
         "binaryDir": "${sourceDir}/build_webasm"
+      },
+      {
+      "name": "iOS",
+      "displayName": "iOS build",
+      "description": "Build in XCode to run on MacOS",
+      "generator": "Xcode",
+      "binaryDir": "${sourceDir}/build_ios",
+      "cacheVariables": {
+        "CMAKE_SYSTEM_NAME": "iOS",
+        "BUILD_SHARED_LIBS": "OFF",
+        "SDL_STATIC": "ON",
+        "SDL_SHARED": "OFF",
+        "SDL2MIXER_OPUS": "OFF",
+        "SDL2MIXER_FLAC": "OFF",
+        "SDL2MIXER_MOD": "OFF",
+        "SDL2MIXER_MIDI": "OFF"
       }
+    }
   ]
 }

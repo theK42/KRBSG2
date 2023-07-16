@@ -29,8 +29,8 @@ void Hud::Init(GameObjectFactory* factory, ScoreKeeper* scoreKeeper, KEngineOpen
 	mScoreKeeper = scoreKeeper;
 	mParentContext = parentContext;
 	
-	auto* fullScreenRight = uiFactory->CreateStaticLayoutGuide(&mDisposables, 800);
-	auto* fullScreenBottom = uiFactory->CreateStaticLayoutGuide(&mDisposables, 600);
+	auto* fullScreenRight = uiFactory->CreateStaticLayoutGuide(&mDisposables, width);
+	auto* fullScreenBottom = uiFactory->CreateStaticLayoutGuide(&mDisposables, height);
 	auto* fullScreenOrigin = uiFactory->CreateStaticLayoutGuide(&mDisposables, 0);
 	
 	KEngineBasics::UIView* hudView = uiFactory->CreateUIView(&mDisposables, nullptr, fullScreenOrigin, fullScreenOrigin, fullScreenRight, fullScreenBottom);

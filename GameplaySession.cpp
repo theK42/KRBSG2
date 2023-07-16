@@ -19,7 +19,7 @@ GameplaySession::~GameplaySession()
 	Deinit();
 }
 
-void GameplaySession::Init(KEngineCore::LuaContext* scriptParent, KEngineCore::Timer* rootTimer, KEngineBasics::Input* rootInput, KEngineCore::LuaScheduler* luaScheduler, KEngineCore::Psychopomp* psychopomp, KEngine2D::HierarchyUpdater* hierarchySystem, KEngineBasics::ShaderFactory* shaderFactory, KEngineBasics::SpriteRenderer* renderer, KEngineBasics::TextRenderer* textRenderer, KEngineBasics::FontFactory* fontFactory, SpriteFactory* spriteFactory, KEngineCore::DataTree* dataRoot, PoolParty* poolParty, KEngineBasics::UIViewFactory* uiFactory, const char* scriptName, int width, int height)
+void GameplaySession::Init(KEngineCore::LuaContext* scriptParent, KEngineCore::Timer* rootTimer, KEngineBasics::Input* rootInput, KEngineCore::LuaScheduler* luaScheduler, KEngineCore::Psychopomp* psychopomp, KEngine2D::HierarchyUpdater* hierarchySystem, KEngineGraphics::ShaderFactory* shaderFactory, KEngineGraphics::SpriteRenderer* renderer, KEngineGraphics::TextRenderer* textRenderer, KEngineGraphics::FontFactory* fontFactory, SpriteFactory* spriteFactory, KEngineCore::DataTree* dataRoot, PoolParty* poolParty, KEngineBasics::UIViewFactory* uiFactory, const char* scriptName, int width, int height)
 {
 	mScriptRunner.Init(luaScheduler, scriptParent);
 
@@ -62,7 +62,9 @@ void GameplaySession::Init(KEngineCore::LuaContext* scriptParent, KEngineCore::T
 	//mInput.AddButton(HASH("fire", 0x58DE09CF), KEngineBasics::ControllerType::Mouse, 0);
 
 	mScriptRunner.AddContextualObject("time", &mTimer);
-	mScriptRunner.AddContextualObject("input", &mInput);
+    mScriptRunner.AddContextualObject("input", &mInput);
+    mScriptRunner.AddContextualData("width", width);
+    mScriptRunner.AddContextualData("height", height);
 
 	auto t = poolParty->GetContinuousTimePool().GetItem(&mDisposables);
 	t->Init(rootTimer, [this](double delta)

@@ -15,11 +15,13 @@
 #include <emscripten/html5.h>
 #else
 #include "SDL.h"
+#include "SDL_syswm.h"
 #endif
 
+
 /* Sets constants */
-#define WIDTH 800
-#define HEIGHT 600
+#define DEFAULT_WIDTH 800
+#define DEFAULT_HEIGHT 600
 
 void KRBSG2::Init()
 {
@@ -36,9 +38,18 @@ void KRBSG2::Init()
     // Request a platform appropriate OpenGL context
     SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
 #ifdef __APPLE__
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+#include "TargetConditionals.h"
+    #if TARGET_OS_IPHONE
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
+        #define FULL_SCREEN_ONLY
+        #define SDL_MUNCHES_FRAMEBUFFERS
+    #else
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    #endif
 #elif defined(__EMSCRIPTEN__)
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
@@ -51,12 +62,25 @@ void KRBSG2::Init()
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     //SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
+    width = DEFAULT_WIDTH;
+    height = DEFAULT_HEIGHT;
+#ifdef FULL_SCREEN_ONLY
+    //Get device display mode
+    SDL_DisplayMode displayMode;
+    if( SDL_GetCurrentDisplayMode( 0, &displayMode ) == 0 )
+    {
+        width = displayMode.w;
+        height = displayMode.h;
+    }
+
+#endif
+    
     /* Creates a SDL window */
     window = SDL_CreateWindow("KRBGSG", /* Title of the SDL window */
         SDL_WINDOWPOS_UNDEFINED, /* Position x of the window */
         SDL_WINDOWPOS_UNDEFINED, /* Position y of the window */
-        WIDTH, /* Width of the window in pixels */
-        HEIGHT, /* Height of the window in pixels */
+        width, /* Width of the window in pixels */
+        height, /* Height of the window in pixels */
         SDL_WINDOW_OPENGL); /* Additional flag(s) */
     
     /* Checks if window has been created; if not, exits program */
@@ -70,11 +94,15 @@ void KRBSG2::Init()
     {
         std::cerr << SDL_GetError() << std::endl;
     }
+    
+    
+
 
     loop = true;
 
-
+#ifndef NOT_GLAD
     KEngineOpenGL::InitializeGlad(SDL_GL_GetProcAddress);
+#endif //NOT_GLAD
     
     std::ifstream dataStream("KRBSG.dat", std::ios::binary);
     if (!dataStream.is_open()) {
@@ -99,7 +127,7 @@ void KRBSG2::Init()
     audio.LoadMusic(HASH("gameMusic", 0xBAA31179), "magic_space.mp3");
     audio.LoadSound(HASH("pew", 0x7D5BCA3F), "laser1.wav");
     hierarchySystem.Init();
-    renderer.Init(WIDTH, HEIGHT, 5); //TODO:  demagic this number?
+    renderer.Init(width, height, 5); //TODO:  demagic this number?
     textRenderer.Init();
     shaderFactory.Init();
     textureFactory.Init();
@@ -151,18 +179,9 @@ void KRBSG2::Init()
 
 void KRBSG2::Update()
 {
-    Uint32 currentTime = SDL_GetTicks();
-
-    Uint32 elapsedTime = currentTime - previousTime;
-    previousTime = currentTime;
-    double elapsedTimeInSeconds = elapsedTime / 1000.0f;
-    timer.Update(elapsedTimeInSeconds);
-    luaScheduler.Update();
-    hierarchySystem.Update(elapsedTimeInSeconds);
-    tweening.Update(elapsedTimeInSeconds);
-    psychopomp.Update();
-    renderer.Render();
-    SDL_GL_SwapWindow(window);
+    GLint mainFramebuffer;
+    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &mainFramebuffer);
+    KEngineOpenGL::PushFramebuffer(mainFramebuffer);
     
     SDL_Event event;
     static float maxShort = std::numeric_limits<int16_t>::max();
@@ -217,6 +236,20 @@ void KRBSG2::Update()
             loop = false;
             break;
         }
+        
+        Uint32 currentTime = SDL_GetTicks();
+
+        Uint32 elapsedTime = currentTime - previousTime;
+        previousTime = currentTime;
+        double elapsedTimeInSeconds = elapsedTime / 1000.0f;
+        timer.Update(elapsedTimeInSeconds);
+        luaScheduler.Update();
+        hierarchySystem.Update(elapsedTimeInSeconds);
+        tweening.Update(elapsedTimeInSeconds);
+        psychopomp.Update();
+
+        renderer.Render();
+        SDL_GL_SwapWindow(window);
     }
 }
 
@@ -262,7 +295,6 @@ void mainLoop() {
 
 int main(int argc, char** argv)
 {
-    
 #ifdef __EMSCRIPTEN__
    // emscripten_set_mousedown_callback("canvas", nullptr, true,
    //     [](int, const EmscriptenMouseEvent* e, void*)->EM_BOOL {

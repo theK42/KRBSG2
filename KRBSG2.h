@@ -58,6 +58,9 @@ struct KRBSG2
     KEngineCore::DataTree            dataRoot;
     bool                             loop;
     Uint32                           previousTime;
+    
+    int width;
+    int height;
 
     void Init();
     void Update();

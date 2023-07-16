@@ -23,8 +23,8 @@ void PauseMenu::Init(KEngineOpenGL::FontFactory* fontFactory, int width, int hei
 	mDisposables.Init();
 	mParentContext = parentContext;
 
-	auto* fullScreenRight = uiFactory->CreateStaticLayoutGuide(&mDisposables, 800);
-	auto* fullScreenBottom = uiFactory->CreateStaticLayoutGuide(&mDisposables, 600);
+	auto* fullScreenRight = uiFactory->CreateStaticLayoutGuide(&mDisposables, width);
+	auto* fullScreenBottom = uiFactory->CreateStaticLayoutGuide(&mDisposables, height);
 	auto* fullScreenOrigin = uiFactory->CreateStaticLayoutGuide(&mDisposables, 0);
 
 	KEngineBasics::UIView* hudView = uiFactory->CreateUIView(&mDisposables, nullptr, fullScreenOrigin, fullScreenOrigin, fullScreenRight, fullScreenBottom);
@@ -42,8 +42,8 @@ void PauseMenu::Init(KEngineOpenGL::FontFactory* fontFactory, int width, int hei
 		//PAUSE MENU
 
 		UILayout* origin = new UIStaticLayout(0);
-		UILayout* fullScreenRight = new UIStaticLayout(800);
-		UILayout* fullScreenBottom = new UIStaticLayout(600);
+		UILayout* fullScreenRight = new UIStaticLayout(width);
+		UILayout* fullScreenBottom = new UIStaticLayout(height);
 
 		KEngineBasics::UIView* pauseView = new UIView(); //TODO:  Pool or something
 		hudView->Init(nullptr, origin, origin, fullScreenRight, fullScreenBottom);

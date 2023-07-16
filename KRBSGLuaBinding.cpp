@@ -146,7 +146,7 @@ void KRBSGLuaBinding::RegisterLibrary(lua_State* luaState, char const* name)
 			KRBSGLuaBinding* binding = (KRBSGLuaBinding*)lua_touserdata(luaState, lua_upvalueindex(1));
 			KEngineCore::LuaContext* scriptParent = KEngineCore::LuaContext::GetFromState(luaState, 1);
 			binding->mPauseMenu = new PauseMenu();
-			binding->mPauseMenu->Init(&binding->mApp->fontFactory, 800, 600, &binding->mApp->uiFactory, scriptParent);
+			binding->mPauseMenu->Init(&binding->mApp->fontFactory, binding->mApp->width, binding->mApp->height, &binding->mApp->uiFactory, scriptParent);
 			return 0;
 		};
 
