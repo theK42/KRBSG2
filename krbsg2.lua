@@ -5,10 +5,9 @@ local krbsg = require "krbsg"
 
 print("welcome to krbsg2");
 
-local width = 800; -- TODO read as parameter?  Change entirely?
-local height = 600;
-
 local context = ...;
+local width = context.width;
+local height = context.height;
 
 while (true) do
 	--attract mode kinda works but isn't really ready for prime time.

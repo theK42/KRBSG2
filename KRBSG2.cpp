@@ -115,6 +115,8 @@ void KRBSG2::Init()
     luaScheduler.Init();
     
     scriptRunner.Init(&luaScheduler, nullptr);
+    scriptRunner.AddContextualData("width", width);
+    scriptRunner.AddContextualData("height", height);
 
     timeLib.Init(luaScheduler.GetMainState());
     inputLib.Init(luaScheduler.GetMainState());
