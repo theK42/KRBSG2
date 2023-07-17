@@ -192,67 +192,69 @@ void KRBSG2::Update()
         /*check if event type is keyboard press*/
         switch (event.type)
         {
-        case SDL_CONTROLLERAXISMOTION:
-            //TODO:  handle event.caxis.which
-            input.HandleAxisChange(KEngineBasics::ControllerType::Gamepad, event.caxis.axis, event.caxis.value / maxShort);
-            break;
-        case SDL_JOYAXISMOTION:
-            input.HandleAxisChange(KEngineBasics::ControllerType::Joystick, event.jaxis.axis, event.jaxis.value / maxShort);
-            break;
-        case SDL_KEYDOWN:
-            input.HandleButtonDown(KEngineBasics::ControllerType::Keyboard, event.key.keysym.scancode);
-            break;
-        case SDL_KEYUP:
-            input.HandleButtonUp(KEngineBasics::ControllerType::Keyboard, event.key.keysym.scancode);
-            break;
-        case SDL_CONTROLLERBUTTONDOWN:
-            input.HandleButtonDown(KEngineBasics::ControllerType::Gamepad, event.cbutton.button);
-            break;
-        case SDL_CONTROLLERBUTTONUP:
-            input.HandleButtonUp(KEngineBasics::ControllerType::Gamepad, event.cbutton.button);
-            break;
-        case SDL_JOYBUTTONDOWN:
-            input.HandleButtonDown(KEngineBasics::ControllerType::Joystick, event.jbutton.button);
-            break;
-        case SDL_JOYBUTTONUP:
-            input.HandleButtonUp(KEngineBasics::ControllerType::Joystick, event.jbutton.button);
-            break;
-        case SDL_CONTROLLERDEVICEADDED:
-            SDL_GameControllerOpen(event.cdevice.which);
-            break;
-        case SDL_JOYDEVICEADDED:
-            SDL_JoystickOpen(event.jdevice.which);
-            break;
-        case SDL_MOUSEMOTION:
-            input.HandleCursorPosition(KEngineBasics::ControllerType::Mouse, { (double)event.motion.x, (double)event.motion.y });
-            break;
-        case SDL_MOUSEBUTTONDOWN:
-            input.HandleCursorPosition(KEngineBasics::ControllerType::Mouse, { (double)event.button.x, (double)event.button.y });
-            input.HandleButtonDown(KEngineBasics::ControllerType::Mouse, event.button.button);
-            break;
-        case SDL_MOUSEBUTTONUP:
-            input.HandleCursorPosition(KEngineBasics::ControllerType::Mouse, { (double)event.button.x, (double)event.button.y });
-            input.HandleButtonUp(KEngineBasics::ControllerType::Mouse, event.button.button);
-            break;
-        case SDL_QUIT:
-            loop = false;
-            break;
+            case SDL_CONTROLLERAXISMOTION:
+                //TODO:  handle event.caxis.which
+                input.HandleAxisChange(KEngineBasics::ControllerType::Gamepad, event.caxis.axis, event.caxis.value / maxShort);
+                break;
+            case SDL_JOYAXISMOTION:
+                input.HandleAxisChange(KEngineBasics::ControllerType::Joystick, event.jaxis.axis, event.jaxis.value / maxShort);
+                break;
+            case SDL_KEYDOWN:
+                input.HandleButtonDown(KEngineBasics::ControllerType::Keyboard, event.key.keysym.scancode);
+                break;
+            case SDL_KEYUP:
+                input.HandleButtonUp(KEngineBasics::ControllerType::Keyboard, event.key.keysym.scancode);
+                break;
+            case SDL_CONTROLLERBUTTONDOWN:
+                input.HandleButtonDown(KEngineBasics::ControllerType::Gamepad, event.cbutton.button);
+                break;
+            case SDL_CONTROLLERBUTTONUP:
+                input.HandleButtonUp(KEngineBasics::ControllerType::Gamepad, event.cbutton.button);
+                break;
+            case SDL_JOYBUTTONDOWN:
+                input.HandleButtonDown(KEngineBasics::ControllerType::Joystick, event.jbutton.button);
+                break;
+            case SDL_JOYBUTTONUP:
+                input.HandleButtonUp(KEngineBasics::ControllerType::Joystick, event.jbutton.button);
+                break;
+            case SDL_CONTROLLERDEVICEADDED:
+                SDL_GameControllerOpen(event.cdevice.which);
+                break;
+            case SDL_JOYDEVICEADDED:
+                SDL_JoystickOpen(event.jdevice.which);
+                break;
+            case SDL_MOUSEMOTION:
+                input.HandleCursorPosition(KEngineBasics::ControllerType::Mouse, { (double)event.motion.x, (double)event.motion.y });
+                break;
+            case SDL_MOUSEBUTTONDOWN:
+                input.HandleCursorPosition(KEngineBasics::ControllerType::Mouse, { (double)event.button.x, (double)event.button.y });
+                input.HandleButtonDown(KEngineBasics::ControllerType::Mouse, event.button.button);
+                break;
+            case SDL_MOUSEBUTTONUP:
+                input.HandleCursorPosition(KEngineBasics::ControllerType::Mouse, { (double)event.button.x, (double)event.button.y });
+                input.HandleButtonUp(KEngineBasics::ControllerType::Mouse, event.button.button);
+                break;
+            case SDL_QUIT:
+                loop = false;
+                break;
         }
-        
-        Uint32 currentTime = SDL_GetTicks();
-
-        Uint32 elapsedTime = currentTime - previousTime;
-        previousTime = currentTime;
-        double elapsedTimeInSeconds = elapsedTime / 1000.0f;
-        timer.Update(elapsedTimeInSeconds);
-        luaScheduler.Update();
-        hierarchySystem.Update(elapsedTimeInSeconds);
-        tweening.Update(elapsedTimeInSeconds);
-        psychopomp.Update();
-
-        renderer.Render();
-        SDL_GL_SwapWindow(window);
     }
+        
+    Uint32 currentTime = SDL_GetTicks();
+
+    Uint32 elapsedTime = currentTime - previousTime;
+    std::cout<<"elapsed time: " << elapsedTime << std::endl;
+    previousTime = currentTime;
+    double elapsedTimeInSeconds = elapsedTime / 1000.0f;
+    timer.Update(elapsedTimeInSeconds);
+    luaScheduler.Update();
+    hierarchySystem.Update(elapsedTimeInSeconds);
+    tweening.Update(elapsedTimeInSeconds);
+    psychopomp.Update();
+
+    renderer.Render();
+    SDL_GL_SwapWindow(window);
+    
 }
 
 void KRBSG2::Deinit()
