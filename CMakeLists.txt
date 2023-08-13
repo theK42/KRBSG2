@@ -22,6 +22,10 @@ function(add_submodule submodule)
     add_subdirectory(${submodule})
 endfunction()
 
+if (MSVC)
+    add_compile_options(/Zc:preprocessor)
+endif()
+
 add_submodule(KEngineCore)
 add_submodule(KEngine2D)
 add_submodule(KEngineOpenGL)

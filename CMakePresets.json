@@ -7,6 +7,20 @@
   },
   "configurePresets": [
     {
+      "name": "Windows",
+      "displayName": "Windows build",
+      "description": "Build in Visual Studio to run on Windows",
+      "binaryDir": "${sourceDir}/build_windows",
+      "cacheVariables": {
+        "SDL2MIXER_OPUS": "OFF",
+        "SDL2MIXER_FLAC": "OFF",
+        "SDL2MIXER_MOD": "OFF",
+        "SDL2MIXER_MIDI": "OFF",
+        "SDL_STATIC": "OFF",
+        "SDL_SHARED": "ON"
+      }
+    },
+    {
       "name": "MacOS",
       "displayName": "MacOs build",
       "description": "Build in XCode to run on MacOS",
@@ -16,7 +30,9 @@
         "SDL2MIXER_OPUS": "OFF",
         "SDL2MIXER_FLAC": "OFF",
         "SDL2MIXER_MOD": "OFF",
-        "SDL2MIXER_MIDI": "OFF"
+        "SDL2MIXER_MIDI": "OFF",
+        "SDL_STATIC": "OFF",
+        "SDL_SHARED": "ON"
       }
     },
     {

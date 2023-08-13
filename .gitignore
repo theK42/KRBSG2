@@ -8,3 +8,4 @@ CMakeCache.txt
 ZERO_CHECK.proj
 ZERO_CHECK.proj.filters
 build/
+build_windows/
