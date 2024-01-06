@@ -159,14 +159,6 @@ void KRBSGLuaBinding::RegisterLibrary(lua_State* luaState, char const* name)
 			return 0;
 		};
 
-
-				
-		auto log = [](lua_State* luaState) {
-			printf(luaL_checkstring(luaState, 1));
-			printf("\n");
-			return 0;
-		};
-
 		auto wrapProjectile = [](lua_State* luaState) -> int {
 			KRBSGLuaBinding* self = (KRBSGLuaBinding*)lua_touserdata(luaState, lua_upvalueindex(1));
 			self->mProjectileWrapping.WrapAndPush(luaState, 1);
@@ -270,7 +262,6 @@ void KRBSGLuaBinding::RegisterLibrary(lua_State* luaState, char const* name)
 			{"wrapEnemyShip", wrapEnemyShip},
 			{"wrapFlyoff", wrapFlyoff},
 			{"spawnStarfield", spawnStarfield},
-			{"log", log },
 			{"pause", pause},
 			{"resume", resume},
 			{"createPauseMenu", createPauseMenu},

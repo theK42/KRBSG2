@@ -1,8 +1,9 @@
 cmake_minimum_required(VERSION 3.20)
 
+set(CMAKE_CXX_STANDARD 20)
+
 #set the project name
 project(KRBSG2)
-
 function(add_submodule submodule)
     message("adding submodule ${submodule}")
     cmake_path(ABSOLUTE_PATH submodule OUTPUT_VARIABLE absolute_submodule)
@@ -159,6 +160,9 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "iOS")
         RESOURCE "${resourceFiles}")
         
     set(MACOSX_BUNDLE_GUI_IDENTIFIER "com.kelson.KRBSG2")
+elseif(${CMAKE_SYSTEM_NAME} MATCHES "Android")
+    add_library(KRBSG2 SHARED ${allFiles})
+    target_compile_definitions(KRBSG2 PUBLIC KRBSG_LIBRARY)
 else()
     add_executable(KRBSG2 ${allFiles})
     target_compile_definitions(KRBSG2 PUBLIC KRBSG_EXECUTABLE)
@@ -204,5 +208,15 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     add_custom_command(TARGET KRBSG2 POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_RUNTIME_DLLS:KRBSG2> $<TARGET_FILE_DIR:KRBSG2>
         COMMAND_EXPAND_LISTS
+    )
+endif()
+
+if (${CMAKE_SYSTEM_NAME} MATCHES "Android")
+    add_custom_command(
+            TARGET KRBSG2
+            POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${resourceFiles}
+            ${CMAKE_ANDROID_ASSETS_DIRECTORIES}
     )
 endif()

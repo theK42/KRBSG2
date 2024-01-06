@@ -17,12 +17,25 @@
 #include "Input.h"
 #include "Audio.h"
 #include "LuaContext.h"
+#include "Logger.h"
+#if defined(__ANDROID__)
+    #include "AndroidLogger.h"
+#else
+    #include "StdLogger.h"
+#endif
 
 class SDL_Window;
 
 struct KRBSG2
 {
     SDL_Window* window = NULL;
+    
+    KEngineCore::Logger             logger;
+#if defined(__ANDROID__)
+    KEngineBasics::AndroidLogger    androidLogger;
+#else
+    KEngineBasics::StdLogger        standardLogger;
+#endif
 
     KEngineCore::TimeLibrary        timeLib;
     KEngineBasics::InputLibrary     inputLib;

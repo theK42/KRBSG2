@@ -11,7 +11,16 @@
 #include "SpriteRenderer.h"
 #include "LuaContext.h"
 #include "DataTree.h"
+
+#ifdef __cpp_lib_math_constants
 #include <numbers>
+#else //Embarrassing workaround for Android
+namespace std {
+	namespace numbers {
+		const double pi = 3.14159265358979323846;
+	}
+}
+#endif
 
 
 const char Projectile::MetaName[] = "KRBSG.Projectile";

@@ -9,3 +9,11 @@ ZERO_CHECK.proj
 ZERO_CHECK.proj.filters
 build/
 build_windows/
+/app/src/main/assets/
+local.properties
+.DS_Store
+build_ios
+.idea
+app/.cxx
+.gradle
+
