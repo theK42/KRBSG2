@@ -104,6 +104,7 @@ void KRBSG2::Init()
     if (!context)
     {
         std::cerr << SDL_GetError() << std::endl;
+        assert(false);
     }
     
     loop = true;
@@ -150,7 +151,6 @@ void KRBSG2::Init()
     
     poolParty.Init();
     
-	class LuaScheduler;
     tweening.Init(&luaScheduler);
     transformLib.Init(&luaScheduler, &tweening);
     spriteLib.Init(&luaScheduler, &tweening);
